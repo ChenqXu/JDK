@@ -35,14 +35,14 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-/**
+/** 基于Hash表的Map接口实现
  * Hash table based implementation of the {@code Map} interface.  This
  * implementation provides all of the optional map operations, and permits
  * {@code null} values and the {@code null} key.  (The {@code HashMap}
- * class is roughly equivalent to {@code Hashtable}, except that it is
+ * class is roughly（大致上） equivalent to {@code Hashtable}, except that it is
  * unsynchronized and permits nulls.)  This class makes no guarantees as to
  * the order of the map; in particular, it does not guarantee that the order
- * will remain constant over time.
+ * will remain constant over time.不能保证元素顺序在一段时间内不变
  *
  * <p>This implementation provides constant-time performance for the basic
  * operations ({@code get} and {@code put}), assuming the hash function
@@ -51,7 +51,8 @@ import java.util.function.Function;
  * {@code HashMap} instance (the number of buckets) plus its size (the number
  * of key-value mappings).  Thus, it's very important not to set the initial
  * capacity too high (or the load factor too low) if iteration performance is
- * important.
+ * important.迭代器性能与HashMap容量和实际大小成正比，因此，不要将初始容量设置得太大，或者将
+ * 装填因子设置得太小。
  *
  * <p>An instance of {@code HashMap} has two parameters that affect its
  * performance: <i>initial capacity</i> and <i>load factor</i>.  The
@@ -60,6 +61,7 @@ import java.util.function.Function;
  * <i>load factor</i> is a measure of how full the hash table is allowed to
  * get before its capacity is automatically increased.  When the number of
  * entries in the hash table exceeds the product of the load factor and the
+ * 当进入Hash表中的元素超过装填因子与容量的乘积时，hash表会进行重hash。
  * current capacity, the hash table is <i>rehashed</i> (that is, internal data
  * structures are rebuilt) so that the hash table has approximately twice the
  * number of buckets.
@@ -80,7 +82,7 @@ import java.util.function.Function;
  * the mappings to be stored more efficiently than letting it perform
  * automatic rehashing as needed to grow the table.  Note that using
  * many keys with the same {@code hashCode()} is a sure way to slow
- * down performance of any hash table. To ameliorate impact, when keys
+ * down performance of any hash table. To ameliorate（改良） impact（碰撞）, when keys
  * are {@link Comparable}, this class may use comparison order among
  * keys to help break ties.
  *
@@ -88,10 +90,10 @@ import java.util.function.Function;
  * If multiple threads access a hash map concurrently, and at least one of
  * the threads modifies the map structurally, it <i>must</i> be
  * synchronized externally.  (A structural modification is any operation
- * that adds or deletes one or more mappings; merely changing the value
+ * that adds or deletes one or more mappings; merely（仅仅） changing the value
  * associated with a key that an instance already contains is not a
  * structural modification.)  This is typically accomplished by
- * synchronizing on some object that naturally encapsulates the map.
+ * synchronizing on some object that naturally encapsulates（封装） the map.
  *
  * If no such object exists, the map should be "wrapped" using the
  * {@link Collections#synchronizedMap Collections.synchronizedMap}
@@ -157,7 +159,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * ordered primarily by hashCode, but in the case of ties, if two
      * elements are of the same "class C implements Comparable<C>",
      * type then their compareTo method is used for ordering. (We
-     * conservatively check generic types via reflection to validate
+     * conservatively（谨慎地） check generic types via reflection to validate
      * this -- see method comparableClassFor).  The added complexity
      * of tree bins is worthwhile in providing worst-case O(log n)
      * operations when keys either have distinct hashes or are
@@ -235,7 +237,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     static final int DEFAULT_INITIAL_CAPACITY = 1 << 4; // aka 16
 
     /**
-     * The maximum capacity, used if a higher value is implicitly specified
+     * The maximum capacity, used if a higher value is implicitly（隐式） specified
      * by either of the constructors with arguments.
      * MUST be a power of two <= 1<<30.
      */
@@ -254,20 +256,24 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * tree removal about conversion back to plain bins upon
      * shrinkage.
      */
-    static final int TREEIFY_THRESHOLD = 8;
+    static final int TREEIFY_THRESHOLD = 8;//链表转换成树的阈值
 
     /**
      * The bin count threshold for untreeifying a (split) bin during a
      * resize operation. Should be less than TREEIFY_THRESHOLD, and at
      * most 6 to mesh with shrinkage detection under removal.
      */
-    static final int UNTREEIFY_THRESHOLD = 6;
+    static final int UNTREEIFY_THRESHOLD = 6; //树转换回链表的阈值
 
     /**
      * The smallest table capacity for which bins may be treeified.
      * (Otherwise the table is resized if too many nodes in a bin.)
      * Should be at least 4 * TREEIFY_THRESHOLD to avoid conflicts
      * between resizing and treeification thresholds.
+     * 当桶中的bin被树化时最小的hash表容量。（如果没有达到这个阈值，
+     * 即hash表容量小于MIN_TREEIFY_CAPACITY，当桶中bin的数量太
+     * 多时会执行resize扩容操作）这个MIN_TREEIFY_CAPACITY的值至
+     * 少是TREEIFY_THRESHOLD的4倍。
      */
     static final int MIN_TREEIFY_CAPACITY = 64;
 
@@ -335,7 +341,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      */
     static final int hash(Object key) {
         int h;
-        return (key == null) ? 0 : (h = key.hashCode()) ^ (h >>> 16);
+        return (key == null) ? 0 : (h = key.hashCode()) ^ (h >>> 16);//对hash码的高16位进行异或，高位不变，低位变0
     }
 
     /**
@@ -373,6 +379,10 @@ public class HashMap<K,V> extends AbstractMap<K,V>
 
     /**
      * Returns a power of two size for the given target capacity.
+     * 下面操作的目的是求出该数字的下一个2的整数次方的数，
+     * 如65的下一个是128,233的下一个是256
+     * 具体原理见下面的博客
+     * https://zhidao.baidu.com/question/291266003.html
      */
     static final int tableSizeFor(int cap) {
         int n = cap - 1;
@@ -406,13 +416,14 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     transient int size;
 
     /**
+     * 该HashMap被结构化修改的次数
      * The number of times this HashMap has been structurally modified
      * Structural modifications are those that change the number of mappings in
      * the HashMap or otherwise modify its internal structure (e.g.,
      * rehash).  This field is used to make iterators on Collection-views of
      * the HashMap fail-fast.  (See ConcurrentModificationException).
      */
-    transient int modCount;
+    transient int modCount; //同步计数器
 
     /**
      * The next size value at which to resize (capacity * load factor).
@@ -500,7 +511,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         int s = m.size();
         if (s > 0) {
             if (table == null) { // pre-size
-                float ft = ((float)s / loadFactor) + 1.0F;
+                float ft = ((float)s / loadFactor) + 1.0F;//为了便于散列，因此进行扩容
                 int t = ((ft < (float)MAXIMUM_CAPACITY) ?
                          (int)ft : MAXIMUM_CAPACITY);
                 if (t > threshold)
@@ -683,7 +694,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
                 threshold = Integer.MAX_VALUE;
                 return oldTab;
             }
-            else if ((newCap = oldCap << 1) < MAXIMUM_CAPACITY &&
+            else if ((newCap = oldCap << 1) < MAXIMUM_CAPACITY &&  //将老容量扩大2倍
                      oldCap >= DEFAULT_INITIAL_CAPACITY)
                 newThr = oldThr << 1; // double threshold
         }
