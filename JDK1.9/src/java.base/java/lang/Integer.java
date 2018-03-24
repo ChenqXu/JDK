@@ -138,6 +138,7 @@ public final class Integer extends Number implements Comparable<Integer> {
         if (radix < Character.MIN_RADIX || radix > Character.MAX_RADIX)
             radix = 10;
 
+
         /* Use the faster version */
         if (radix == 10) {
             return toString(i);

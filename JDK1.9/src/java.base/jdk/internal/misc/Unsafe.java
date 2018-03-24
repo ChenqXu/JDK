@@ -37,9 +37,9 @@ import java.security.ProtectionDomain;
  * Although the class and all methods are public, use of this class is
  * limited because only trusted code can obtain instances of it.
  *
- * <em>Note:</em> It is the resposibility of the caller to make sure
+ * <em>Note:</em> It is the responsibility of the caller to make sure
  * arguments are checked before methods of this class are
- * called. While some rudimentary checks are performed on the input,
+ * called. While some rudimentary(基本的) checks are performed on the input,
  * the checks are best effort and when performance is an overriding
  * priority, as when methods of this class are optimized by the
  * runtime compiler, some or all checks (if any) may be elided. Hence,
