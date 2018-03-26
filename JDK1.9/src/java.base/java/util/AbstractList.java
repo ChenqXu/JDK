@@ -649,6 +649,7 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
      *
      * 这个属性用于iterator和list iterator中。当迭代期间modCount被外部修改时，就会
      * 抛出ConcurrentModificationException异常，从而实现“快速失败”行为。
+     *
      * <p>This field is used by the iterator and list iterator implementation
      * returned by the {@code iterator} and {@code listIterator} methods.
      * If the value of this field changes unexpectedly, the iterator (or list

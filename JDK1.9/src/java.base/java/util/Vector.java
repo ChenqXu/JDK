@@ -30,12 +30,24 @@ import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 
 /**
+ *  Vector实现了一个大小可变的数组，它的元素可以通过下标方法（实现了RandomAccess
+ *  接口）。
+ *
+ *  Vector是线程安全的。在不需要考虑线程安全的情况下，推荐实用ArrayList来替代该类。
+ *  Vector是通过在需要同步的方法上加Synchronized关键字类进行同步控制的。因此效率
+ *  较低。
+ *
  * The {@code Vector} class implements a growable array of
  * objects. Like an array, it contains components that can be
  * accessed using an integer index. However, the size of a
  * {@code Vector} can grow or shrink as needed to accommodate
  * adding and removing items after the {@code Vector} has been created.
  *
+ * Vector尝试通过持有capacity和capacityIncrement属性来实现对存储空间的优化。
+ *  capacity始终比Vector的size大，而capacityIncrement决定了每次Vector容量
+ *  增加多少。
+ *  应用在放入大量数据之前可以提前增加容量，以避免插入过程中频繁的扩容和复制带来的时间
+ *  消耗。
  * <p>Each vector tries to optimize storage management by maintaining a
  * {@code capacity} and a {@code capacityIncrement}. The
  * {@code capacity} is always at least as large as the vector
@@ -45,6 +57,8 @@ import java.util.function.UnaryOperator;
  * capacity of a vector before inserting a large number of
  * components; this reduces the amount of incremental reallocation.
  *
+ * 该类返回的迭代器是“快速失败”的迭代器。当面对并发修改的时候，这个迭代器可以快速失败和
+ * 清理。以免造成错误的结果。
  * <p id="fail-fast">
  * The iterators returned by this class's {@link #iterator() iterator} and
  * {@link #listIterator(int) listIterator} methods are <em>fail-fast</em>:
@@ -55,10 +69,16 @@ import java.util.function.UnaryOperator;
  * {@link ConcurrentModificationException}.  Thus, in the face of
  * concurrent modification, the iterator fails quickly and cleanly, rather
  * than risking arbitrary, non-deterministic behavior at an undetermined
+ * 通过elements()返回的Enumerations不是快速失败的。因此在面对并发修改时，该方法的结果
+ * 将会是未知的。
+ *
  * time in the future.  The {@link Enumeration Enumerations} returned by
  * the {@link #elements() elements} method are <em>not</em> fail-fast; if the
  * Vector is structurally modified at any time after the enumeration is
  * created then the results of enumerating are undefined.
+ * 迭代器的快速失败行为并不能保证一定会成功，它只是尽最大努力来检测和抛出异常。
+ * 任何非锁定并发修改都不能做出绝对的保证。因此，任何依赖迭代器抛出的异常来进行
+ * 编程的行为都是错误。迭代器的快速失败行为只应该被用来检查bug。
  *
  * <p>Note that the fail-fast behavior of an iterator cannot be guaranteed
  * as it is, generally speaking, impossible to make any hard guarantees in the
@@ -89,6 +109,9 @@ public class Vector<E>
     implements List<E>, RandomAccess, Cloneable, java.io.Serializable
 {
     /**
+     * Vector使用一个对象数组（Object[]）作为容器。Vector最后一个元素后的所有空间都被
+     * 置为null。vector的容量就是该数组的大小。
+     *  该数组默认大小为10.
      * The array buffer into which the components of the vector are
      * stored. The capacity of the vector is the length of this array buffer,
      * and is at least large enough to contain all the vector's elements.
@@ -100,6 +123,7 @@ public class Vector<E>
     protected Object[] elementData;
 
     /**
+     * vector实际存储的元素数量。
      * The number of valid components in this {@code Vector} object.
      * Components {@code elementData[0]} through
      * {@code elementData[elementCount-1]} are the actual items.
@@ -109,6 +133,8 @@ public class Vector<E>
     protected int elementCount;
 
     /**
+     * vector自动扩容的增量。如果这个增量小于等于0，那么vector的容量每次会扩容为2倍大小。
+     * 该属性默认为0.
      * The amount by which the capacity of the vector is automatically
      * incremented when its size becomes greater than its capacity.  If
      * the capacity increment is less than or equal to zero, the capacity
@@ -162,6 +188,9 @@ public class Vector<E>
     }
 
     /**
+     * 该方法中最后的判断是为了解决一个java中的bug——Arrays.asList()返回的可能不是
+     * Object[]类型数组的问题。简单说明见：
+     * https://www.zhihu.com/question/66518325/answer/243761796
      * Constructs a vector containing the elements of the specified
      * collection, in the order they are returned by the collection's
      * iterator.
@@ -176,11 +205,17 @@ public class Vector<E>
         elementCount = elementData.length;
         // defend against c.toArray (incorrectly) not returning Object[]
         // (see e.g. https://bugs.openjdk.java.net/browse/JDK-6260652)
+        /*
+        这个判断是为了解决一个bug，Arrays.asList()返回的可能不是Object[]类型数组的问题
+         */
         if (elementData.getClass() != Object[].class)
             elementData = Arrays.copyOf(elementData, elementCount, Object[].class);
     }
 
     /**
+     * 将本集合中的元素拷贝到传入的数组中去。如果传入的数组不够大，
+     * 则抛出IndexOutOfBoundsException异常。
+     * 如果类型不匹配，则抛出ArrayStoreException。
      * Copies the components of this vector into the specified array.
      * The item at index {@code k} in this vector is copied into
      * component {@code k} of {@code anArray}.
@@ -198,6 +233,7 @@ public class Vector<E>
     }
 
     /**
+     * 将vector的数组的大小缩小至实际元素数量的大小。内部调用的是Arrays.copyOf()
      * Trims the capacity of this vector to be the vector's current
      * size. If the capacity of this vector is larger than its current
      * size, then the capacity is changed to equal the size by replacing
@@ -214,6 +250,10 @@ public class Vector<E>
     }
 
     /**
+     * 将数组的大小增大到至少minCapacity大小。具体为：
+     * 如果数组容量小于minCapcity，那么对数组进行一次扩容（默认为扩大2倍）
+     * 如果仍然不够大，那么就直接将容量扩大至传入的minCapacity。
+     *
      * Increases the capacity of this vector, if necessary, to ensure
      * that it can hold at least the number of components specified by
      * the minimum capacity argument.
@@ -239,6 +279,7 @@ public class Vector<E>
     }
 
     /**
+     * 数组最大大小为整型最大值-8
      * The maximum size of array to allocate (unless necessary).
      * Some VMs reserve some header words in an array.
      * Attempts to allocate larger arrays may result in
@@ -247,6 +288,7 @@ public class Vector<E>
     private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
 
     /**
+     * 将容量扩大到至少minCapacity。
      * Increases the capacity to ensure that it can hold at least the
      * number of elements specified by the minimum capacity argument.
      *
@@ -263,6 +305,7 @@ public class Vector<E>
     }
 
     /**
+     * 计算大于等于minCapacity的容量大小。
      * Returns a capacity at least as large as the given minimum capacity.
      * Will not return a capacity greater than MAX_ARRAY_SIZE unless
      * the given minimum capacity is greater than MAX_ARRAY_SIZE.
@@ -294,6 +337,8 @@ public class Vector<E>
     }
 
     /**
+     * 重新设置Vector的大小。如果新的大小比当前的大，那么多余的空位用null填充。
+     * 如果比当前的小，那么下标为newSize及之后的元素都会被丢弃。
      * Sets the size of this vector. If the new size is greater than the
      * current size, new {@code null} items are added to the end of
      * the vector. If the new size is less than the current size, all
@@ -313,6 +358,7 @@ public class Vector<E>
     }
 
     /**
+     * 返回对象数组的大小
      * Returns the current capacity of this vector.
      *
      * @return  the current capacity (the length of its internal
@@ -344,6 +390,8 @@ public class Vector<E>
     }
 
     /**
+     * 返回一个包含该vector所有元素的枚举类。如果在枚举的过程中vector进行了结构化修改
+     * 那么枚举，那么结果将是不定的。
      * Returns an enumeration of the components of this vector. The
      * returned {@code Enumeration} object will generate all items in
      * this vector. The first item generated is the item at index {@code 0},
@@ -374,6 +422,7 @@ public class Vector<E>
     }
 
     /**
+     * 从0开始搜索o是否存在，使用 Objects.equals(o, e)
      * Returns {@code true} if this vector contains the specified element.
      * More formally, returns {@code true} if and only if this vector
      * contains at least one element {@code e} such that
@@ -387,6 +436,7 @@ public class Vector<E>
     }
 
     /**
+     * 查找指定对象在数组中的索引，如果没找到则返回-1
      * Returns the index of the first occurrence of the specified element
      * in this vector, or -1 if this vector does not contain the element.
      * More formally, returns the lowest index {@code i} such that
@@ -402,6 +452,7 @@ public class Vector<E>
     }
 
     /**
+     * 从index开始搜索o。如果o等于null，则返回从index开始的第一个null的下标
      * Returns the index of the first occurrence of the specified element in
      * this vector, searching forwards from {@code index}, or returns -1 if
      * the element is not found.
@@ -446,6 +497,8 @@ public class Vector<E>
     }
 
     /**
+     * 没有使用迭代器，使用的是下标进行访问，ArrayList也是一样。但是它们的父类AbstractList
+     * 则是使用list iterator进行迭代访问的。
      * Returns the index of the last occurrence of the specified element in
      * this vector, searching backwards from {@code index}, or returns -1 if
      * the element is not found.
@@ -589,6 +642,9 @@ public class Vector<E>
     }
 
     /**
+     * 调用System.arraycopy(elementData, index,elementData, index + 1,s - index);
+     * 来实现数组元素的整体移动。调用系统的复制函数有助于提高效率。
+     *
      * Inserts the specified object as a component in this vector at the
      * specified {@code index}. Each component in this vector with
      * an index greater or equal to the specified {@code index} is
@@ -683,6 +739,7 @@ public class Vector<E>
     }
 
     /**
+     * 克隆过后的数组会有新的引用
      * Returns a clone of this vector. The copy will contain a
      * reference to a clone of the internal data array, not a reference
      * to the original internal data array of this {@code Vector} object.
@@ -703,6 +760,7 @@ public class Vector<E>
     }
 
     /**
+     * 复制一个新数组并返回。
      * Returns an array containing all of the elements in this Vector
      * in the correct order.
      *
@@ -713,6 +771,9 @@ public class Vector<E>
     }
 
     /**
+     * 将vector中的元素复制到传入的数组中去。如果传入的数组够大，那么返回的就是该数组。
+     * 如果传入的数组不够大，那么会返回一个新的，够大的数组，并将最后一个元素的下一位设置为null。
+     * 当知道该vector中不含null时，这项操作有助于确定vector的长度。
      * Returns an array containing all of the elements in this Vector in the
      * correct order; the runtime type of the returned array is that of the
      * specified array.  If the Vector fits in the specified array, it is
@@ -745,7 +806,7 @@ public class Vector<E>
 
         System.arraycopy(elementData, 0, a, 0, elementCount);
 
-        if (a.length > elementCount)
+        if (a.length > elementCount)  //这行有啥用？
             a[elementCount] = null;
 
         return a;
@@ -780,9 +841,10 @@ public class Vector<E>
     }
 
     /**
+     * 替换index位置的元素为element
      * Replaces the element at the specified position in this Vector with the
      * specified element.
-     *
+     * 该方法会返回该位置上的旧值。而setElementAt()则不会返回。
      * @param index index of the element to replace
      * @param element element to be stored at the specified position
      * @return the element previously at the specified position
@@ -800,6 +862,7 @@ public class Vector<E>
     }
 
     /**
+     *  该方法从add()方法分裂出来，目的是为了便于在C1编译器循环中使用。
      * This helper method split out from add(E) to keep method
      * bytecode size under 35 (the -XX:MaxInlineSize default value),
      * which helps when add(E) is called in a C1-compiled loop.
@@ -813,7 +876,7 @@ public class Vector<E>
 
     /**
      * Appends the specified element to the end of this Vector.
-     *
+     *将指定元素加到vector末尾
      * @param e element to be appended to this Vector
      * @return {@code true} (as specified by {@link Collection#add})
      * @since 1.2
@@ -825,6 +888,7 @@ public class Vector<E>
     }
 
     /**
+     * 移除vector中第一个与传入元素匹配的元素。
      * Removes the first occurrence of the specified element in this Vector
      * If the Vector does not contain the element, it is unchanged.  More
      * formally, removes the element with the lowest index i such that
@@ -855,6 +919,9 @@ public class Vector<E>
     }
 
     /**
+     * 通过System.arraycopy()方法来将index后面的元素都向前复制一位，以达到删除index
+     * 位置处元素的目的。将最后一位置位null，以方便垃圾收集器回收。最后会返回被删除的值。
+     *
      * Removes the element at the specified position in this Vector.
      * Shifts any subsequent elements to the left (subtracts one from their
      * indices).  Returns the element that was removed from the Vector.
@@ -893,6 +960,7 @@ public class Vector<E>
     // Bulk Operations
 
     /**
+     * 并没有自己实现，而是调用AbstractCollection抽象类的该方法。
      * Returns true if this Vector contains all of the elements in the
      * specified Collection.
      *
@@ -907,9 +975,16 @@ public class Vector<E>
     }
 
     /**
+     * 不是在方法上，而是在代码块中使用了Synchronized关键字。
+     * 调用c.toArray()将c转化为数组。然后通过System.arraycopy来将数组中的值都复制到
+     * vector的对象数组中去。
+
      * Appends all of the elements in the specified Collection to the end of
      * this Vector, in the order that they are returned by the specified
-     * Collection's Iterator.  The behavior of this operation is undefined if
+     * Collection's Iterator.
+     *
+     * 下面这段怎么理解？
+     * The behavior of this operation is undefined if
      * the specified Collection is modified while the operation is in progress.
      * (This implies that the behavior of this call is undefined if the
      * specified Collection is this Vector, and this Vector is nonempty.)
@@ -937,6 +1012,7 @@ public class Vector<E>
     }
 
     /**
+     * 调用了 bulkRemove(Predicate<? super E> filter)方法来进行元素的大量删除。
      * Removes from this Vector all of its elements that are contained in the
      * specified Collection.
      *
@@ -959,6 +1035,7 @@ public class Vector<E>
     }
 
     /**
+     * 调用了 bulkRemove(Predicate<? super E> filter)方法来进行元素的大量删除。
      * Retains only the elements in this Vector that are contained in the
      * specified Collection.  In other words, removes from this Vector all
      * of its elements that are not contained in the specified Collection.
@@ -983,6 +1060,7 @@ public class Vector<E>
     }
 
     /**
+     * 通过断言来删选元素
      * @throws NullPointerException {@inheritDoc}
      */
     @Override
@@ -992,7 +1070,6 @@ public class Vector<E>
     }
 
     // A tiny bit set implementation
-
     private static long[] nBits(int n) {
         return new long[((n - 1) >> 6) + 1];
     }
@@ -1040,6 +1117,9 @@ public class Vector<E>
     }
 
     /**
+     * 使用System.arraycopy()来移动和插入元素。现将vector中index及之后的元素后移
+     * c.length位，然后将c中的元素依次复制进去。
+     *
      * Inserts all of the elements in the specified Collection into this
      * Vector at the specified position.  Shifts the element currently at
      * that position (if any) and any subsequent elements to the right
@@ -1081,6 +1161,7 @@ public class Vector<E>
     }
 
     /**
+     * 调用AbstractList的equals方法
      * Compares the specified Object with this Vector for equality.  Returns
      * true if and only if the specified Object is also a List, both Lists
      * have the same size, and all corresponding pairs of elements in the two
@@ -1112,6 +1193,20 @@ public class Vector<E>
     }
 
     /**
+     * 返回一个该List的指定范围的视图。该方法提供了一种范围清除的用法：
+     * list.subList(from, to).clear();这个操作将会把Vector中from到to的元素
+     * 都清除掉。
+     * 如果要对返回的集合使用迭代器，那么用户必须手动上锁，保持同步。
+     * 使用Collections.synchronizedList来是的子列表是线程安全的。
+     *
+     * 需要特别注意returedList= Collections.synchronizedList(List<T> list, Object mutex).
+     * 该方法能够使的returedList变得线程安全类，其内部的实现原理是，通过对Synchronized(mutex)
+     * 来对返回的returedList的所有方法的代码块进行加锁。如果调用的是：
+     * returedList = Collections.synchronizedList(List<T> list)
+     * 那么加锁的对象就是returedList。
+     * 关于这个加锁陷阱的博文：
+     *https://www.cnblogs.com/yaowen/p/5983136.html
+     *
      * Returns a view of the portion of this List between fromIndex,
      * inclusive, and toIndex, exclusive.  (If fromIndex and toIndex are
      * equal, the returned List is empty.)  The returned List is backed by this
@@ -1119,7 +1214,7 @@ public class Vector<E>
      * vice-versa.  The returned List supports all of the optional List
      * operations supported by this List.
      *
-     * <p>This method eliminates the need for explicit range operations (of
+     * <p>This method eliminates（消除） the need for explicit range operations (of
      * the sort that commonly exist for arrays).  Any operation that expects
      * a List can be used as a range operation by operating on a subList view
      * instead of a whole List.  For example, the following idiom
@@ -1151,6 +1246,7 @@ public class Vector<E>
     }
 
     /**
+     * 通过调用shiftTailOverGap来擦除该范围的元素
      * Removes from this list all of the elements whose index is between
      * {@code fromIndex}, inclusive, and {@code toIndex}, exclusive.
      * Shifts any succeeding elements to the left (reduces their index).
@@ -1162,7 +1258,9 @@ public class Vector<E>
         shiftTailOverGap(elementData, fromIndex, toIndex);
     }
 
-    /** Erases the gap from lo to hi, by sliding down following elements. */
+    /** Erases the gap from lo to hi, by sliding down following elements.
+     * 使用system.arraycopy将hi及其之后的元素向前覆盖到lo的位置。后面的置为null
+     * */
     private void shiftTailOverGap(Object[] es, int lo, int hi) {
         System.arraycopy(es, hi, es, lo, elementCount - hi);
         for (int to = elementCount, i = (elementCount -= hi - lo); i < to; i++)
@@ -1170,6 +1268,7 @@ public class Vector<E>
     }
 
     /**
+     * 将该vector序列化，然后使用输出流输出。通过使用Synchronized代码块确保同步安全。
      * Saves the state of the {@code Vector} instance to a stream
      * (that is, serializes it).
      * This method performs synchronization to ensure the consistency
@@ -1192,6 +1291,10 @@ public class Vector<E>
     }
 
     /**
+     * 迭代器是实现Iterator和ListIterator接口的私有内部类，使用Synchronized(Vector.this){}
+     * 代码块保证了并发安全。
+     *
+     * 返回一个从指定位置开始的list迭代器。
      * Returns a list iterator over the elements in this list (in proper
      * sequence), starting at the specified position in the list.
      * The specified index indicates the first element that would be
@@ -1210,6 +1313,7 @@ public class Vector<E>
     }
 
     /**
+     * 返回一个从头开始的list迭代器
      * Returns a list iterator over the elements in this list (in proper
      * sequence).
      *
@@ -1222,6 +1326,7 @@ public class Vector<E>
     }
 
     /**
+     * 返回一个普通的（单向的）迭代器
      * Returns an iterator over the elements in this list in proper sequence.
      *
      * <p>The returned iterator is <a href="#fail-fast"><i>fail-fast</i></a>.
@@ -1350,6 +1455,18 @@ public class Vector<E>
     }
 
     /**
+     * 线程安全的方法来遍历自身的元素，可以通过重写Consumer中的accept方法
+     * 来实现向在遍历中进行的操作。参照博客
+     * https://www.cnblogs.com/wucao/p/5350461.html
+     *
+     * Consumer是一个函数式接口。
+     *
+     * 该方法是的List可以通过内部循环遍历自身元素，这样做的有点有：
+     * <li>1. 不一定需要顺序处理List中的元素，顺序可以不确定</li>
+     * <li>2. 可以并行处理，充分利用多核CPU的优势</li>
+     * <li>3. 有利于JIT编译器对代码进行优化</li>
+     *
+     * 为什么要使用函数式接口：http://ju.outofmemory.cn/entry/145554
      * @throws NullPointerException {@inheritDoc}
      */
     @Override
@@ -1365,6 +1482,7 @@ public class Vector<E>
     }
 
     /**
+     * 使用返回同样类型的函数式接口UnaryOperator，对vector中的所有元素执行一样的更新操作
      * @throws NullPointerException {@inheritDoc}
      */
     @Override
@@ -1382,6 +1500,10 @@ public class Vector<E>
 
     @SuppressWarnings("unchecked")
     @Override
+    /**
+     * 调用Arrays.sort方法，使用传入的Comparator对vector中的元素进行排序。
+     * Comparator可以使用lambda表达式来简化
+     */
     public synchronized void sort(Comparator<? super E> c) {
         final int expectedModCount = modCount;
         Arrays.sort((E[]) elementData, 0, elementCount, c);
@@ -1391,6 +1513,7 @@ public class Vector<E>
     }
 
     /**
+     * 创建一个后期绑定和快速失败的Spliterator迭代器
      * Creates a <em><a href="Spliterator.html#binding">late-binding</a></em>
      * and <em>fail-fast</em> {@link Spliterator} over the elements in this
      * list.
