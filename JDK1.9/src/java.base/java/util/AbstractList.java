@@ -28,16 +28,22 @@ package java.util;
 import java.util.function.Consumer;
 
 /**
+ * 该类是List接口的提纲性实现，来简化需要实现list接口的类的工作。该类的所有实现都是以
+ * “random access”的方式访问元素（简而言之就是可以通过下标访问元素，如数组）
+ * 对于需要以链表方法是组织元素的集合，应该优先考虑继承AbstractSequentialList。
+ * 注：AbstractSequentialList也是一个抽象类，且是该类的子类
  * This class provides a skeletal implementation of the {@link List}
  * interface to minimize the effort required to implement this interface
  * backed by a "random access" data store (such as an array).  For sequential
  * access data (such as a linked list), {@link AbstractSequentialList} should
  * be used in preference to this class.
  *
+ * 如果要实现一个不可变集合，那么编程者可以继承该类，并只提供get和size方法的实现即可
  * <p>To implement an unmodifiable list, the programmer needs only to extend
  * this class and provide implementations for the {@link #get(int)} and
  * {@link List#size() size()} methods.
  *
+ * 如果要实现可变集合，那么需要实现额外实现set方法（该类不提供实现）
  * <p>To implement a modifiable list, the programmer must additionally
  * override the {@link #set(int, Object) set(int, E)} method (which otherwise
  * throws an {@code UnsupportedOperationException}).  If the list is
@@ -48,6 +54,8 @@ import java.util.function.Consumer;
  * constructor, as per the recommendation in the {@link Collection} interface
  * specification.
  *
+ * 不同于继承其他的抽象集合类，继承本类的类不用提供迭代器的实现，因为本类已经实现了iterator和
+ * list iterator
  * <p>Unlike the other abstract collection implementations, the programmer does
  * <i>not</i> have to provide an iterator implementation; the iterator and
  * list iterator are implemented by this class, on top of the "random access"
@@ -79,6 +87,7 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
     }
 
     /**
+     * 将特定元素插入到list的末尾，只要不抛出异常，则一定会返回ture
      * Appends the specified element to the end of this list (optional
      * operation).
      *
@@ -114,7 +123,7 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
 
     /**
      * {@inheritDoc}
-     *
+     *  需要子类重写的按索引获取元素的方法
      * @throws IndexOutOfBoundsException {@inheritDoc}
      */
     public abstract E get(int index);
@@ -172,7 +181,10 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
 
     /**
      * {@inheritDoc}
-     *
+     *  通过ListIterator来遍历所有元素，并使用previousIndex()方法来返回该元素在List
+     *  中的下标。之所要用previousIndex来获取上一个元素的下标，是因为Iterator.next()
+     *  返回的是当前元素，但会自动将锚点移动到下一位。
+     *  如果传入的元素为null，则会返回第一个null的下标。
      * @implSpec
      * This implementation first gets a list iterator (with
      * {@code listIterator()}).  Then, it iterates over the list until the
@@ -197,7 +209,9 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
 
     /**
      * {@inheritDoc}
-     *
+     * 通过listIterator(size())来获取到起点为最后一个节点的迭代器，并依次向前遍历
+     * 直到找到元素或到达List头部。
+     * 找到了就返回下标，找不到就返回-1。
      * @implSpec
      * This implementation first gets a list iterator that points to the end
      * of the list (with {@code listIterator(size())}).  Then, it iterates
@@ -225,6 +239,7 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
     // Bulk Operations
 
     /**
+     * 该方法调用了removeRange(0,size())来实现
      * Removes all of the elements from this list (optional operation).
      * The list will be empty after this call returns.
      *
@@ -277,6 +292,7 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
     // Iterators
 
     /**
+     * 返回一个迭代器
      * Returns an iterator over the elements in this list in proper sequence.
      *
      * @implSpec
@@ -289,6 +305,7 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
      * {@code remove} method unless the list's {@code remove(int)} method is
      * overridden.
      *
+     * 在面对并发修改的时候，该迭代器实现会抛出运行时异常。
      * <p>This implementation can be made to throw runtime exceptions in the
      * face of concurrent modification, as described in the specification
      * for the (protected) {@link #modCount} field.
@@ -301,7 +318,7 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
 
     /**
      * {@inheritDoc}
-     *
+     *  返回一个双向迭代器。
      * @implSpec
      * This implementation returns {@code listIterator(0)}.
      *
@@ -313,7 +330,8 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
 
     /**
      * {@inheritDoc}
-     *
+     *  该方法返回了一个ListIterator接口的简单实现。这个迭代器的操作都是依赖List中的
+     *  get(int)、set(int,E)，add(int,E)等方法。
      * @implSpec
      * This implementation returns a straightforward implementation of the
      * {@code ListIterator} interface that extends the implementation of the
@@ -328,6 +346,7 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
      * list's {@code remove(int)}, {@code set(int, E)}, and
      * {@code add(int, E)} methods are overridden.
      *
+     * 在面对并发修改的时候，该迭代器实现会抛出运行时异常。
      * <p>This implementation can be made to throw runtime exceptions in the
      * face of concurrent modification, as described in the specification for
      * the (protected) {@link #modCount} field.
@@ -340,6 +359,9 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
         return new ListItr(index);
     }
 
+    /**
+     * Interator接口的一个私有简单实现。所有操作均通过本List的方法完成。
+     */
     private class Itr implements Iterator<E> {
         /**
          * Index of element to be returned by subsequent call to next.
@@ -347,6 +369,8 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
         int cursor = 0;
 
         /**
+         * 最近一次调用next()或者previous()方法返回的对象的下标。如果这个元素被remove
+         * 方法移除了，那么该值被设为-1.
          * Index of element returned by most recent call to next or
          * previous.  Reset to -1 if this element is deleted by a call
          * to remove.
@@ -354,6 +378,7 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
         int lastRet = -1;
 
         /**
+         * 迭代器基于的list应该要具有modCount计数器。
          * The modCount value that the iterator believes that the backing
          * List should have.  If this expectation is violated, the iterator
          * has detected concurrent modification.
@@ -461,6 +486,7 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
     /**
      * {@inheritDoc}
      *
+     * subList的所有操作都是调用的父List的方法，因此对subList的修改会映射到父List上。
      * @implSpec
      * This implementation returns a list that subclasses
      * {@code AbstractList}.  The subclass stores, in private fields, the
@@ -513,6 +539,8 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
     // Comparison and hashing
 
     /**
+     * 首先检查引用是否相等，相等则返回true；否则，检查类型，如果类型不同，那么直接返
+     * 回false；接着依次检查对应位置的元素是否匹配。
      * Compares the specified object with this list for equality.  Returns
      * {@code true} if and only if the specified object is also a list, both
      * lists have the same size, and all corresponding pairs of elements in
@@ -535,11 +563,13 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
      * @return {@code true} if the specified object is equal to this list
      */
     public boolean equals(Object o) {
-        if (o == this)
+        if (o == this) //检查引用是否相等
             return true;
-        if (!(o instanceof List))
+        if (!(o instanceof List)) //如果类型不同，那么直接返回false
             return false;
 
+        //如果类型相同，则依次检查对应位置的元素是否匹配。
+        //如果对应位置都是null，那么也是匹配的
         ListIterator<E> e1 = listIterator();
         ListIterator<?> e2 = ((List<?>) o).listIterator();
         while (e1.hasNext() && e2.hasNext()) {
@@ -553,6 +583,11 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
 
     /**
      * Returns the hash code value for this list.
+     *
+     * 与AbstractList中所有元素的位置，以及hashCode都有关。
+     * 核心计算方法如下：
+     *  for (E e : this)
+     *   hashCode = 31*hashCode + (e==null ? 0 : e.hashCode());
      *
      * @implSpec
      * This implementation uses exactly the code that is used to define the
@@ -569,6 +604,9 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
     }
 
     /**
+     * 通过迭代器的remove()来删除指定范围内的元素，迭代器中remove()又是通过调用
+     * 该类的remove(int index)方法来实现删除的。注意，toIndex并不被包含在内。
+     * 该方法可以理解为从fromIndex开始，删除toIndex-fromIndex个元素。
      * Removes from this list all of the elements whose index is between
      * {@code fromIndex}, inclusive, and {@code toIndex}, exclusive.
      * Shifts any succeeding elements to the left (reduces their index).
@@ -588,6 +626,8 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
      * been removed.  <b>Note: if {@code ListIterator.remove} requires linear
      * time, this implementation requires quadratic time.</b>
      *
+     *  如果ListIterator.remove需要花费线性时间，那么该操作将花费二次时间。
+     *
      * @param fromIndex index of first element to be removed
      * @param toIndex index after last element to be removed
      */
@@ -600,11 +640,15 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
     }
 
     /**
+     * 这是一个计数器，记录了这个list被结构化改变的次数。结构化改变是指那些改变list大小，
+     * 或者会使迭代产生不正确结果的操作
      * The number of times this list has been <i>structurally modified</i>.
      * Structural modifications are those that change the size of the
      * list, or otherwise perturb it in such a fashion that iterations in
      * progress may yield incorrect results.
      *
+     * 这个属性用于iterator和list iterator中。当迭代期间modCount被外部修改时，就会
+     * 抛出ConcurrentModificationException异常，从而实现“快速失败”行为。
      * <p>This field is used by the iterator and list iterator implementation
      * returned by the {@code iterator} and {@code listIterator} methods.
      * If the value of this field changes unexpectedly, the iterator (or list
@@ -637,6 +681,7 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
     }
 
     /**
+     * 通过索引来拆分的分段迭代器
      * An index-based split-by-two, lazily initialized Spliterator covering
      * a List that access elements via {@link List#get}.
      *
@@ -745,6 +790,12 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
         }
     }
 
+    /**
+     * 该类的所有操作都使用的父List的方法，也就是对SubList的操作就是对父List的操作
+     * 同时，subList中也使用了modCount。这样，如果在subList操作过程中，父List
+     * 进行了结构化修改，那么会抛出ConcurrentModificationException异常。
+     * @param <E>
+     */
     private static class SubList<E> extends AbstractList<E> {
         private final AbstractList<E> root;
         private final SubList<E> parent;
@@ -914,6 +965,10 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
         }
     }
 
+    /**
+     * 具有随机访问特定的子列表
+     * @param <E>
+     */
     private static class RandomAccessSubList<E>
             extends SubList<E> implements RandomAccess {
 
