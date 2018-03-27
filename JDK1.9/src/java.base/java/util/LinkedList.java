@@ -28,6 +28,7 @@ package java.util;
 import java.util.function.Consumer;
 
 /**
+ *
  * Doubly-linked list implementation of the {@code List} and {@code Deque}
  * interfaces.  Implements all optional list operations, and permits all
  * elements (including {@code null}).
