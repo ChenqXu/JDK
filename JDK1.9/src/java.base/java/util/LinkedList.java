@@ -28,14 +28,16 @@ package java.util;
 import java.util.function.Consumer;
 
 /**
+ * LinkedList是一个实现了List和Deque接口的双向链表。
  * Doubly-linked list implementation of the {@code List} and {@code Deque}
  * interfaces.  Implements all optional list operations, and permits all
  * elements (including {@code null}).
  *
+ *对于index的定位，必须由头部或者尾部开始遍历得到。
  * <p>All of the operations perform as could be expected for a doubly-linked
  * list.  Operations that index into the list will traverse the list from
  * the beginning or the end, whichever is closer to the specified index.
- *
+ * 该方式并不是并发安全的。
  * <p><strong>Note that this implementation is not synchronized.</strong>
  * If multiple threads access a linked list concurrently, and at least
  * one of the threads modifies the list structurally, it <i>must</i> be
@@ -44,13 +46,15 @@ import java.util.function.Consumer;
  * an element is not a structural modification.)  This is typically
  * accomplished by synchronizing on some object that naturally
  * encapsulates the list.
- *
+ * 在多线程环境下使用该类，要么进行外部的同步控制，要么使用Collections.synchronizedList
+ * 对该类进行一个包装。
  * If no such object exists, the list should be "wrapped" using the
  * {@link Collections#synchronizedList Collections.synchronizedList}
  * method.  This is best done at creation time, to prevent accidental
  * unsynchronized access to the list:<pre>
  *   List list = Collections.synchronizedList(new LinkedList(...));</pre>
- *
+ * 
+ * 该类的迭代器是快速失败机制的。
  * <p>The iterators returned by this class's {@code iterator} and
  * {@code listIterator} methods are <i>fail-fast</i>: if the list is
  * structurally modified at any time after the iterator is created, in
@@ -60,7 +64,7 @@ import java.util.function.Consumer;
  * modification, the iterator fails quickly and cleanly, rather than
  * risking arbitrary, non-deterministic behavior at an undetermined
  * time in the future.
- *
+ * 快速失败并不能用来进行同步控制，只应该作为检查bug的机制
  * <p>Note that the fail-fast behavior of an iterator cannot be guaranteed
  * as it is, generally speaking, impossible to make any hard guarantees in the
  * presence of unsynchronized concurrent modification.  Fail-fast iterators
@@ -111,6 +115,7 @@ public class LinkedList<E>
     }
 
     /**
+     * 调用addAll方法来将c中的所有元素添加进本List
      * Constructs a list containing the elements of the specified
      * collection, in the order they are returned by the collection's
      * iterator.
@@ -124,6 +129,7 @@ public class LinkedList<E>
     }
 
     /**
+     * 在链表头部插入元素e，基本的链表操作
      * Links e as first element.
      */
     private void linkFirst(E e) {
@@ -139,6 +145,7 @@ public class LinkedList<E>
     }
 
     /**
+     * 在链表尾部插入元素
      * Links e as last element.
      */
     void linkLast(E e) {
@@ -154,6 +161,7 @@ public class LinkedList<E>
     }
 
     /**
+    *在succ节点前插入e。
      * Inserts element e before non-null Node succ.
      */
     void linkBefore(E e, Node<E> succ) {
@@ -170,6 +178,7 @@ public class LinkedList<E>
     }
 
     /**
+    * 删除f及之前的节点
      * Unlinks non-null first node f.
      */
     private E unlinkFirst(Node<E> f) {
@@ -189,6 +198,7 @@ public class LinkedList<E>
     }
 
     /**
+    * 删除f及之后的几点
      * Unlinks non-null last node l.
      */
     private E unlinkLast(Node<E> l) {
@@ -208,6 +218,7 @@ public class LinkedList<E>
     }
 
     /**
+    * 删除x节点
      * Unlinks non-null node x.
      */
     E unlink(Node<E> x) {
@@ -237,6 +248,7 @@ public class LinkedList<E>
     }
 
     /**
+    * 返回第一个节点的值
      * Returns the first element in this list.
      *
      * @return the first element in this list
@@ -250,6 +262,7 @@ public class LinkedList<E>
     }
 
     /**
+    * 返回最后一个节点的值
      * Returns the last element in this list.
      *
      * @return the last element in this list
@@ -263,6 +276,8 @@ public class LinkedList<E>
     }
 
     /**
+    * 该方法和removeLast()方法对代码的复用程度很高，都是将逻辑抽象出来，形成一个新的方法。以方便其他地方复用。
+     * 删除第一个节点，并返回该节点的值
      * Removes and returns the first element from this list.
      *
      * @return the first element from this list
@@ -276,6 +291,7 @@ public class LinkedList<E>
     }
 
     /**
+     * 删除最后一个节点并返回他的值
      * Removes and returns the last element from this list.
      *
      * @return the last element from this list
@@ -289,6 +305,7 @@ public class LinkedList<E>
     }
 
     /**
+     * 调用linkFirst将e插入到头部
      * Inserts the specified element at the beginning of this list.
      *
      * @param e the element to add
@@ -298,6 +315,7 @@ public class LinkedList<E>
     }
 
     /**
+     * 调用linkLast将e插入到末尾
      * Appends the specified element to the end of this list.
      *
      * <p>This method is equivalent to {@link #add}.
@@ -309,6 +327,8 @@ public class LinkedList<E>
     }
 
     /**
+     * 判断输入的对象o是否存在于链表中
+     * 内部通过调用indexOf(o)方法来达到对方法的复用
      * Returns {@code true} if this list contains the specified element.
      * More formally, returns {@code true} if and only if this list contains
      * at least one element {@code e} such that
@@ -331,6 +351,7 @@ public class LinkedList<E>
     }
 
     /**
+     * 调用linkLast方法将e添加到链表末尾
      * Appends the specified element to the end of this list.
      *
      * <p>This method is equivalent to {@link #addLast}.
@@ -344,6 +365,7 @@ public class LinkedList<E>
     }
 
     /**
+     * 从链表的头结点开始遍历，移除遇到的一个o.equals(x.item)的元素
      * Removes the first occurrence of the specified element from this list,
      * if it is present.  If this list does not contain the element, it is
      * unchanged.  More formally, removes the element with the lowest index
@@ -376,6 +398,7 @@ public class LinkedList<E>
     }
 
     /**
+     * 调用addAll(size, c);将c中的所有元素安好顺序插入到链表的末尾
      * Appends all of the elements in the specified collection to the end of
      * this list, in the order that they are returned by the specified
      * collection's iterator.  The behavior of this operation is undefined if
@@ -392,6 +415,7 @@ public class LinkedList<E>
     }
 
     /**
+     * 将c中的所有元素插入到index位置，动手画一下过程，加深理解
      * Inserts all of the elements in the specified collection into this
      * list, starting at the specified position.  Shifts the element
      * currently at that position (if any) and any subsequent elements to
