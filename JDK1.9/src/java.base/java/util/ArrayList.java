@@ -30,12 +30,20 @@ import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 
 /**
+ * List接口的可序列化实现，允许插入null值。这个集合粗略地等同于Vector，但是ArrayList不是
+ * 同步安全的。
  * Resizable-array implementation of the {@code List} interface.  Implements
  * all optional list operations, and permits all elements, including
  * {@code null}.  In addition to implementing the {@code List} interface,
- * this class provides methods to manipulate the size of the array that is
+ * this class provides methods to manipulate(操纵) the size of the array that is
  * used internally to store the list.  (This class is roughly equivalent to
  * {@code Vector}, except that it is unsynchronized.)
+ *
+ *size,  isEmpty,  get,  set, iterator方法花费常数时间。
+ * add 花费O(n)时间
+ * 其他操作粗略认为花费线性时间
+ * ArrayList的常数因子比LinkedList小，常数因子就是不随数据规模增长而增长的时间开销。
+ * 如做某个操作需要遍历一个数组两遍，那么时间复杂度就是 O（n），常数因子是2.
  *
  * <p>The {@code size}, {@code isEmpty}, {@code get}, {@code set},
  * {@code iterator}, and {@code listIterator} operations run in constant
@@ -44,6 +52,7 @@ import java.util.function.UnaryOperator;
  * run in linear time (roughly speaking).  The constant factor is low compared
  * to that for the {@code LinkedList} implementation.
  *
+ * capacity属性用来表示ArrayList的容量大小，它始终大于或等于size
  * <p>Each {@code ArrayList} instance has a <i>capacity</i>.  The capacity is
  * the size of the array used to store the elements in the list.  It is always
  * at least as large as the list size.  As elements are added to an ArrayList,
@@ -51,10 +60,13 @@ import java.util.function.UnaryOperator;
  * specified beyond the fact that adding an element has constant amortized
  * time cost.
  *
+ * 用户可以通过调用ensureCapacity方法来确保ArrayList拥有足够大的空间。并依次来避免频繁
+ * 的自动扩容所带来的时间开销。
  * <p>An application can increase the capacity of an {@code ArrayList} instance
  * before adding a large number of elements using the {@code ensureCapacity}
  * operation.  This may reduce the amount of incremental reallocation.
  *
+ * 注意，这个实现不是线程安全的。如果多线程要并发地对该集合进行结构化修改，那么必须进行外部同步。
  * <p><strong>Note that this implementation is not synchronized.</strong>
  * If multiple threads access an {@code ArrayList} instance concurrently,
  * and at least one of the threads modifies the list structurally, it
@@ -64,12 +76,16 @@ import java.util.function.UnaryOperator;
  * a structural modification.)  This is typically accomplished by
  * synchronizing on some object that naturally encapsulates the list.
  *
+ * 也可以通过Collections.synchronizedList来包装ArrayList，以保证它的线程安全
+ * 这种方式最好在创建时进行。
  * If no such object exists, the list should be "wrapped" using the
  * {@link Collections#synchronizedList Collections.synchronizedList}
  * method.  This is best done at creation time, to prevent accidental
  * unsynchronized access to the list:<pre>
  *   List list = Collections.synchronizedList(new ArrayList(...));</pre>
  *
+ *
+ * 该实现也提供了快失败机制的普通迭代器和list 迭代器。
  * <p id="fail-fast">
  * The iterators returned by this class's {@link #iterator() iterator} and
  * {@link #listIterator(int) listIterator} methods are <em>fail-fast</em>:
@@ -82,6 +98,7 @@ import java.util.function.UnaryOperator;
  * than risking arbitrary, non-deterministic behavior at an undetermined
  * time in the future.
  *
+ * 注意，快失败机制并不能确保一定有效。不能依赖此机制进行编程。这个机制通常只用来检查bug
  * <p>Note that the fail-fast behavior of an iterator cannot be guaranteed
  * as it is, generally speaking, impossible to make any hard guarantees in the
  * presence of unsynchronized concurrent modification.  Fail-fast iterators
@@ -110,6 +127,7 @@ public class ArrayList<E> extends AbstractList<E>
     private static final long serialVersionUID = 8683452581122892189L;
 
     /**
+     * 默认容量为10
      * Default initial capacity.
      */
     private static final int DEFAULT_CAPACITY = 10;
@@ -121,12 +139,15 @@ public class ArrayList<E> extends AbstractList<E>
 
     /**
      * Shared empty array instance used for default sized empty instances. We
-     * distinguish this from EMPTY_ELEMENTDATA to know how much to inflate when
+     * distinguish（区分） this from EMPTY_ELEMENTDATA to know how much to inflate when
      * first element is added.
      */
     private static final Object[] DEFAULTCAPACITY_EMPTY_ELEMENTDATA = {};
 
     /**
+     * 存储元素的对象数组，它的大小就是ArrayList的容量。
+     * 所有elementData == DEFAULTCAPACITY_EMPTY_ELEMENTDATA的数组第一次添加元素时，
+     * 将会被扩充至默认大小。
      * The array buffer into which the elements of the ArrayList are stored.
      * The capacity of the ArrayList is the length of this array buffer. Any
      * empty ArrayList with elementData == DEFAULTCAPACITY_EMPTY_ELEMENTDATA
@@ -142,6 +163,7 @@ public class ArrayList<E> extends AbstractList<E>
     private int size;
 
     /**
+     * 以用户传入的大于0的初始化容量（不加修饰）来创建对象数组。
      * Constructs an empty list with the specified initial capacity.
      *
      * @param  initialCapacity  the initial capacity of the list
@@ -160,6 +182,7 @@ public class ArrayList<E> extends AbstractList<E>
     }
 
     /**
+     * 默认容量是10
      * Constructs an empty list with an initial capacity of ten.
      */
     public ArrayList() {
@@ -167,6 +190,8 @@ public class ArrayList<E> extends AbstractList<E>
     }
 
     /**
+     * 通过Arrays.copyOf方法来将Collection c中的元素复制到本ArrayList的对象数组中
+     *
      * Constructs a list containing the elements of the specified
      * collection, in the order they are returned by the collection's
      * iterator.
@@ -188,6 +213,11 @@ public class ArrayList<E> extends AbstractList<E>
     }
 
     /**
+     * 如果该list实际大小小于容量，那么该方法将elementData中的所有元素拷贝到一个大小等于size
+     * 的数组中去，这意味着经过该操作后，ArrayList中将没有空位。
+     * 如果list的size等于容量，那么不做改变。
+     * 应用程序可以通过调用该方法来释放多余空间。
+     *
      * Trims the capacity of this {@code ArrayList} instance to be the
      * list's current size.  An application can use this operation to minimize
      * the storage of an {@code ArrayList} instance.
@@ -202,6 +232,16 @@ public class ArrayList<E> extends AbstractList<E>
     }
 
     /**
+     * 确保容量最少为传入的minCapacity大小。具体为：
+     * <li>如果minCapacity小于等于当前容量，那么不做操作。</li>
+     * <li>否则，如果elementData == DEFAULTCAPACITY_EMPTY_ELEMENTDATA，并且minCapacity
+     * 小于等于DEFAULT_CAPACITY,也就是10。同样不做操作.</li>
+     * <li>否则，将elementData增大50%，并判断是否大于等于minCapacity</li>
+     * <li>如果大于，那么容量确定为增大50%后的值</li>
+     * <li>否则，判断elementData是否等于DEFAULTCAPACITY_EMPTY_ELEMENTDATA</li>
+     * <li>是，那么返回DEFAULT_CAPACITY和minCapacity中的最大值</li>
+     * <li>否，那么返回minCapacity</li>
+     *
      * Increases the capacity of this {@code ArrayList} instance, if
      * necessary, to ensure that it can hold at least the number of elements
      * specified by the minimum capacity argument.
@@ -226,6 +266,7 @@ public class ArrayList<E> extends AbstractList<E>
     private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
 
     /**
+     * 增大数组容量，并确保增大后的容量大于等于传入的minCapacity。返回的是新数组
      * Increases the capacity to ensure that it can hold at least the
      * number of elements specified by the minimum capacity argument.
      *
@@ -266,6 +307,12 @@ public class ArrayList<E> extends AbstractList<E>
             : hugeCapacity(minCapacity);
     }
 
+    /**
+     * 返回最大的可用的容量，如果minCapacity大于MAX_ARRAY_SIZE,
+     * 那么返回Integer.MAX_VALUE，否则犯规Integer.MAXVALUE-8.
+     * @param minCapacity 确保的最小容量
+     * @return 容量大小
+     */
     private static int hugeCapacity(int minCapacity) {
         if (minCapacity < 0) // overflow
             throw new OutOfMemoryError();
@@ -293,6 +340,9 @@ public class ArrayList<E> extends AbstractList<E>
     }
 
     /**
+     * 通Objects.equals(o, e)判断是否存在e，存在则返回ture。
+     * 内部使用for循环遍历，没有使用迭代器。
+     *
      * Returns {@code true} if this list contains the specified element.
      * More formally, returns {@code true} if and only if this list contains
      * at least one element {@code e} such that
@@ -346,6 +396,11 @@ public class ArrayList<E> extends AbstractList<E>
     }
 
     /**
+     *
+     * 返回该ArrayList的浅拷贝实例（从Object中继承过来的clone默认实现的是浅拷贝）。
+     * 深拷贝和浅拷贝的区别在于对引用类型的属性的处理。
+     * 浅拷贝：复制的是属性的引用。因此在拷贝对象中对引用类型属性的修改会影响到原对象。
+     * 深拷贝：当对象和它所引用的对象一起拷贝时即发生深拷贝。深拷贝相比于浅拷贝速度较慢并且花销较大。
      * Returns a shallow copy of this {@code ArrayList} instance.  (The
      * elements themselves are not copied.)
      *
@@ -364,6 +419,7 @@ public class ArrayList<E> extends AbstractList<E>
     }
 
     /**
+     * 该方法返回的是一个新数组，调用者可以自由修改返回的数组
      * Returns an array containing all of the elements in this list
      * in proper sequence (from first to last element).
      *
@@ -382,6 +438,8 @@ public class ArrayList<E> extends AbstractList<E>
     }
 
     /**
+     * 将所有元素拷贝到插入的数组中去。如果容量不够，那么构造一个新数组。
+     * 如果容量足够，那么将所有元素拷贝过去，并将最后一个元素的下一位赋为null。
      * Returns an array containing all of the elements in this list in proper
      * sequence (from first to last element); the runtime type of the returned
      * array is that of the specified array.  If the list fits in the
@@ -430,6 +488,7 @@ public class ArrayList<E> extends AbstractList<E>
 
     /**
      * Returns the element at the specified position in this list.
+     *将判断逻辑和返回逻辑拆分为不同的方法，是为了更好地重用代码。
      *
      * @param  index index of the element to return
      * @return the element at the specified position in this list
@@ -441,6 +500,7 @@ public class ArrayList<E> extends AbstractList<E>
     }
 
     /**
+     * 更新为新值，并返回旧值。
      * Replaces the element at the specified position in this list with
      * the specified element.
      *
@@ -457,6 +517,8 @@ public class ArrayList<E> extends AbstractList<E>
     }
 
     /**
+     * 该方法从add(E)分裂出，以使方法add(e)的字节码长度小于35，便于c1编译器
+     * 调用。
      * This helper method split out from add(E) to keep method
      * bytecode size under 35 (the -XX:MaxInlineSize default value),
      * which helps when add(E) is called in a C1-compiled loop.
@@ -481,6 +543,7 @@ public class ArrayList<E> extends AbstractList<E>
     }
 
     /**
+     * 通过调用System.arraycopy()方法实现，可以提高效率
      * Inserts the specified element at the specified position in this
      * list. Shifts the element currently at that position (if any) and
      * any subsequent elements to the right (adds one to their indices).
@@ -504,6 +567,7 @@ public class ArrayList<E> extends AbstractList<E>
     }
 
     /**
+     * 通过调用System.arraycopy()方法实现元素覆盖，可以提高效率
      * Removes the element at the specified position in this list.
      * Shifts any subsequent elements to the left (subtracts one from their
      * indices).
@@ -528,6 +592,10 @@ public class ArrayList<E> extends AbstractList<E>
     }
 
     /**
+     * 删除第一次出现的o。
+     * 通过调用私有方法fastRemove(index)方法来实现删除。
+     * fastRemove通过调用System.arraycopy()将index之后的元素依次向前覆盖以为，并将最后
+     * 一位置为null，以此来达到快速删除的目的。
      * Removes the first occurrence of the specified element from this list,
      * if it is present.  If the list does not contain the element, it is
      * unchanged.  More formally, removes the element with the lowest index
@@ -558,6 +626,8 @@ public class ArrayList<E> extends AbstractList<E>
     }
 
     /**
+     * 私有方法，fastRemove通过调用System.arraycopy()将index之后的元素依次向前覆盖以为，并将最后
+     * 一位置为null，以此来达到快速删除的目的。
      * Private remove method that skips bounds checking and does not
      * return the value removed.
      */
@@ -571,6 +641,7 @@ public class ArrayList<E> extends AbstractList<E>
     }
 
     /**
+     * for循环遍历，依次置为null
      * Removes all of the elements from this list.  The list will
      * be empty after this call returns.
      */
@@ -582,6 +653,7 @@ public class ArrayList<E> extends AbstractList<E>
     }
 
     /**
+     * 通过System.arraycopy()将c中的元素复制到本集合中
      * Appends all of the elements in the specified collection to the end of
      * this list, in the order that they are returned by the
      * specified collection's Iterator.  The behavior of this operation is
@@ -739,6 +811,16 @@ public class ArrayList<E> extends AbstractList<E>
         return batchRemove(c, true, 0, size);
     }
 
+    /**
+     * 该方法设计的亮点是，通过一个参数complement，实现了removeAll和retainAll两个方法
+     * 对该方法的复用。
+     * 最终仍然是调用System.arraycopy()将元素复制过去。
+     * @param c 操作的数组
+     * @param complement true，保留相同的元素。false，删除相同的元素。
+     * @param from 开始检查的位置
+     * @param end 结束检查的位置
+     * @return 是否移除成功
+     */
     boolean batchRemove(Collection<?> c, boolean complement,
                         final int from, final int end) {
         Objects.requireNonNull(c);
@@ -769,6 +851,7 @@ public class ArrayList<E> extends AbstractList<E>
     }
 
     /**
+     * 通过对象输出流保存该List的一个状态
      * Saves the state of the {@code ArrayList} instance to a stream
      * (that is, serializes it).
      *
@@ -798,6 +881,9 @@ public class ArrayList<E> extends AbstractList<E>
     }
 
     /**
+     * 从一个对象输入流中读取，并恢复状态。
+     * 跟1.8相比，多了size==0和size<0的处理
+     *
      * Reconstitutes the {@code ArrayList} instance from a stream (that is,
      * deserializes it).
      * @param s the stream
@@ -1405,15 +1491,15 @@ public class ArrayList<E> extends AbstractList<E>
          * If ArrayLists were immutable, or structurally immutable (no
          * adds, removes, etc), we could implement their spliterators
          * with Arrays.spliterator. Instead we detect as much
-         * interference during traversal as practical without
-         * sacrificing much performance. We rely primarily on
-         * modCounts. These are not guaranteed to detect concurrency
-         * violations, and are sometimes overly conservative about
+         * interference(检查) during traversal(遍历) as practical without
+         * sacrificing(牺牲) much performance. We rely primarily on
+         * modCounts. These are not guaranteed to detect（检查） concurrency
+         * violations(违反行为), and are sometimes overly(过度) conservative(保守) about
          * within-thread interference, but detect enough problems to
          * be worthwhile in practice. To carry this out, we (1) lazily
          * initialize fence and expectedModCount until the latest
          * point that we need to commit to the state we are checking
-         * against; thus improving precision.  (This doesn't apply to
+         * against; thus improving precision(精度).  (This doesn't apply to
          * SubLists, that create spliterators with current non-lazy
          * values).  (2) We perform only a single
          * ConcurrentModificationException check at the end of forEach
