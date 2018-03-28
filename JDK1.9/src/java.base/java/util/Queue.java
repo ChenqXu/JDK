@@ -70,7 +70,9 @@ package java.util;
  *    <td>{@link Queue#peek peek()}</td>
  *  </tr>
  * </table>
- *
+ *  典型的队列都是按照先进先出的顺序，但是这并不是一定。例如优先级队列PriorityQueue。
+ *  该队列按照元素的优先级对元素进行排序。
+ *  在先进先出的队列里，元素都是从尾部插入的。
  * <p>Queues typically, but do not necessarily, order elements in a
  * FIFO (first-in-first-out) manner.  Among the exceptions are
  * priority queues, which order elements according to a supplied
@@ -83,6 +85,8 @@ package java.util;
  * different placement rules.  Every {@code Queue} implementation
  * must specify its ordering properties.
  *
+ * 在容量固定的队列，如生产者消费者队列中，队列容量有限，插入和失败操作都是很正常的，
+ * 因此需要有offer、poll这样失败不会抛异常，而是仅仅返回一个标志的方法。
  * <p>The {@link #offer offer} method inserts an element if possible,
  * otherwise returning {@code false}.  This differs from the {@link
  * java.util.Collection#add Collection.add} method, which can fail to
@@ -90,6 +94,9 @@ package java.util;
  * {@code offer} method is designed for use when failure is a normal,
  * rather than exceptional occurrence, for example, in fixed-capacity
  * (or &quot;bounded&quot;) queues.
+ *
+ * remove和poll方法用来移除队列头部的元素。当队列为空时，remove会抛出异常，而
+ * poll仅仅返回false。
  *
  * <p>The {@link #remove()} and {@link #poll()} methods remove and
  * return the head of the queue.
@@ -100,23 +107,34 @@ package java.util;
  * queue is empty: the {@code remove()} method throws an exception,
  * while the {@code poll()} method returns {@code null}.
  *
+ * element和peek方法返回队列的头部元素值，但是并不删除头节点。
+ * 却别在于，队列为空时，element将抛出异常。而peek返回false
+ *
  * <p>The {@link #element()} and {@link #peek()} methods return, but do
  * not remove, the head of the queue.
  *
+ * 用于多线程环境中的队列是java.util.concurrent.BlockingQueue。这个队列实现了本接口
  * <p>The {@code Queue} interface does not define the <i>blocking queue
  * methods</i>, which are common in concurrent programming.  These methods,
  * which wait for elements to appear or for space to become available, are
  * defined in the {@link java.util.concurrent.BlockingQueue} interface, which
  * extends this interface.
  *
+ * 队列的实现通常不允许插入null值，但是一些实现，如LinkedList并不禁止null值的插入。
  * <p>{@code Queue} implementations generally do not allow insertion
  * of {@code null} elements, although some implementations, such as
  * {@link LinkedList}, do not prohibit insertion of {@code null}.
+ *
+ * 但就算在这些不禁止的实现中，null值也是不应该别插入到队列中的，因为在poll方法中，
+ * null作为出队失败的标志。
+ *
  * Even in the implementations that permit it, {@code null} should
  * not be inserted into a {@code Queue}, as {@code null} is also
  * used as a special return value by the {@code poll} method to
  * indicate that the queue contains no elements.
  *
+ * 队列通常不实现字节的equals和hashCode方法，而是使用继承自Object的这些方法。
+ * 因为对于相同元素但不同顺序的队列，基于队列值的equals和hashCode方法并不总是表现的很好。
  * <p>{@code Queue} implementations generally do not define
  * element-based versions of methods {@code equals} and
  * {@code hashCode} but instead inherit the identity based versions
@@ -134,6 +152,7 @@ package java.util;
  */
 public interface Queue<E> extends Collection<E> {
     /**
+     * 向队列尾部插入一个值，如果成功则返回true。如果没有空间，则抛出异常
      * Inserts the specified element into this queue if it is possible to do so
      * immediately without violating capacity restrictions, returning
      * {@code true} upon success and throwing an {@code IllegalStateException}
@@ -153,6 +172,8 @@ public interface Queue<E> extends Collection<E> {
     boolean add(E e);
 
     /**
+     * 向队列尾部插入一个元素，容量不足则返回false。
+     * 在容量有限的队列中，推荐实用该方法，而不是add。
      * Inserts the specified element into this queue if it is possible to do
      * so immediately without violating capacity restrictions.
      * When using a capacity-restricted queue, this method is generally
@@ -172,6 +193,7 @@ public interface Queue<E> extends Collection<E> {
     boolean offer(E e);
 
     /**
+     * 将队列头部的元素删除并返回，队列为空则抛异常。
      * Retrieves and removes the head of this queue.  This method differs
      * from {@link #poll poll} only in that it throws an exception if this
      * queue is empty.
@@ -182,6 +204,7 @@ public interface Queue<E> extends Collection<E> {
     E remove();
 
     /**
+     * 将队列头部的元素删除并返回，队列为空则返回false。
      * Retrieves and removes the head of this queue,
      * or returns {@code null} if this queue is empty.
      *
@@ -190,6 +213,7 @@ public interface Queue<E> extends Collection<E> {
     E poll();
 
     /**
+     * 返回队列头部元素值，但不删除。如果队列为null则抛出异常
      * Retrieves, but does not remove, the head of this queue.  This method
      * differs from {@link #peek peek} only in that it throws an exception
      * if this queue is empty.
@@ -200,6 +224,7 @@ public interface Queue<E> extends Collection<E> {
     E element();
 
     /**
+     * 返回队列头部元素值，但不删除。如果队列为空则返回null。
      * Retrieves, but does not remove, the head of this queue,
      * or returns {@code null} if this queue is empty.
      *
