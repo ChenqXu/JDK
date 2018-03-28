@@ -26,6 +26,8 @@
 package java.util;
 
 /**
+ *SortedSet能保持元素整体有序。元素根据自身的原始顺序或指定的Comparator进行大小比较。
+ * 迭代器遍历的顺序使升序的。该类为利用有序性额外提供几个方法。
  * A {@link Set} that further provides a <i>total ordering</i> on its elements.
  * The elements are ordered using their {@linkplain Comparable natural
  * ordering}, or by a {@link Comparator} typically provided at sorted
@@ -34,6 +36,9 @@ package java.util;
  * to take advantage of the ordering.  (This interface is the set
  * analogue of {@link SortedMap}.)
  *
+ * 所有被插入Set中的元素都必须实现Comparable接口，后者能过被指定的Comparator接收。
+ *对任意的两个元素e1、e2，都需要能通过e1.compareTo(e2)或者comparator.compare(e1, e2)
+ * 进行比较。
  * <p>All elements inserted into a sorted set must implement the {@code Comparable}
  * interface (or be accepted by the specified comparator).  Furthermore, all
  * such elements must be <i>mutually comparable</i>: {@code e1.compareTo(e2)}
@@ -56,6 +61,13 @@ package java.util;
  * ordering is inconsistent with equals; it just fails to obey the general
  * contract of the {@code Set} interface.
  *
+ * 所有通用的有序set实现类都必须拥有4个标准构造器：
+ * 1. 一个无参构造器用于创建一个空的set，根据元素的自然顺序进行排序。
+ * 2. 只含有一个Comparator参数的构造器。用于创建一个空的set，根据指定的比较器进行排序
+ * 3. 只含有一个Collection类型元素的构造器。创建一个包含此元素的set，根据这个元素的自然顺序
+ * 进行排序
+ * 4. 只包含一个SortedSet类型元素的构造器。创建一个新的和传入set相同的元素和顺序的SortedSet
+ * 由于接口中不能包含构造器，因此上面的要求并不能强制要求。
  * <p>All general-purpose sorted set implementation classes should
  * provide four "standard" constructors: 1) A void (no arguments)
  * constructor, which creates an empty sorted set sorted according to
@@ -70,6 +82,9 @@ package java.util;
  * ordering as the input sorted set.  There is no way to enforce this
  * recommendation, as interfaces cannot contain constructors.
  *
+ * 注意：几个方法可以返回指定范围的子集合。这个范围是半开半闭的（包含开始点，不包含
+ * 结束点）。如果你需要指定一个闭区间，可以按照以下方式：
+ * SortedSet<String> sub = s.subSet(log,high+"\0");
  * <p>Note: several methods return subsets with restricted ranges.
  * Such ranges are <i>half-open</i>, that is, they include their low
  * endpoint but not their high endpoint (where applicable).
@@ -82,6 +97,8 @@ package java.util;
  * {@code high}, inclusive:<pre>
  *   SortedSet&lt;String&gt; sub = s.subSet(low, high+"\0");</pre>
  *
+ * 同样的方法可以用来构造一个全开范围：
+ * SortedSet<String> sub = s.subSet(low+"\0", high);
  * A similar technique can be used to generate an <i>open range</i> (which
  * contains neither endpoint).  The following idiom obtains a view
  * containing all of the Strings in {@code s} from {@code low} to
@@ -107,6 +124,7 @@ package java.util;
 
 public interface SortedSet<E> extends Set<E> {
     /**
+     * 返回该集合使用的比较器，如果使用元素的自然顺序，那么返回null。
      * Returns the comparator used to order the elements in this set,
      * or {@code null} if this set uses the {@linkplain Comparable
      * natural ordering} of its elements.
@@ -118,13 +136,18 @@ public interface SortedSet<E> extends Set<E> {
     Comparator<? super E> comparator();
 
     /**
+     * 返回一个指定范围的集合视图，类似于ArrayList中的subList方法。
+     * 当from和to相等时，返回空的子视图。
      * Returns a view of the portion of this set whose elements range
      * from {@code fromElement}, inclusive, to {@code toElement},
      * exclusive.  (If {@code fromElement} and {@code toElement} are
      * equal, the returned set is empty.)  The returned set is backed
+     * 返回的子集合依赖于父集合，所有对子集合的修改都会映射到父集合中，反之也一样。
      * by this set, so changes in the returned set are reflected in
      * this set, and vice-versa.  The returned set supports all
      * optional set operations that this set supports.
+     *
+     * 如果尝试在子集合范围外插入一个元素，那么会抛出IllegalArgumentException
      *
      * <p>The returned set will throw an {@code IllegalArgumentException}
      * on an attempt to insert an element outside its range.
@@ -151,6 +174,7 @@ public interface SortedSet<E> extends Set<E> {
     SortedSet<E> subSet(E fromElement, E toElement);
 
     /**
+     * 返回toElement之前的所有元素组成的一个视图。子集合拥有所有父集合拥有的操作。
      * Returns a view of the portion of this set whose elements are
      * strictly less than {@code toElement}.  The returned set is
      * backed by this set, so changes in the returned set are
@@ -178,6 +202,7 @@ public interface SortedSet<E> extends Set<E> {
     SortedSet<E> headSet(E toElement);
 
     /**
+     * 返回从from（包含）开始的所有元素组成的视图。
      * Returns a view of the portion of this set whose elements are
      * greater than or equal to {@code fromElement}.  The returned
      * set is backed by this set, so changes in the returned set are
@@ -205,6 +230,7 @@ public interface SortedSet<E> extends Set<E> {
     SortedSet<E> tailSet(E fromElement);
 
     /**
+     * 返回最小元素
      * Returns the first (lowest) element currently in this set.
      *
      * @return the first (lowest) element currently in this set
@@ -213,6 +239,7 @@ public interface SortedSet<E> extends Set<E> {
     E first();
 
     /**
+     * 返回最大元素
      * Returns the last (highest) element currently in this set.
      *
      * @return the last (highest) element currently in this set
