@@ -40,10 +40,19 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 /**
+ * 继承自BlockingQueue、Deque
+ * 额外提供阻塞操作的双端队列。
+ * 在没有元素时获取，元素满时插入都会阻塞相应的线程。
  * A {@link Deque} that additionally supports blocking operations that wait
  * for the deque to become non-empty when retrieving an element, and wait for
  * space to become available in the deque when storing an element.
  *
+ *
+ * 阻塞双端队列的方法有四种形式，每种方式返回的结果不同，以处理不同的情形。
+ * 一种抛出异常，
+ * 第二种返回一个特别的值（通常是null或false），
+ * 第三种无限期阻塞当前的线程，直到条件满足（有元素或有空间），
+ * 第四种仅阻塞一个指定的时间。
  * <p>{@code BlockingDeque} methods come in four forms, with different ways
  * of handling operations that cannot be satisfied immediately, but may be
  * satisfied at some point in the future:
@@ -119,10 +128,12 @@ import java.util.NoSuchElementException;
  *  </tr>
  * </table>
  *
+ * 同任何阻塞队列一样，双端阻塞队列也是线程安全的，并且不允许插入null值。
  * <p>Like any {@link BlockingQueue}, a {@code BlockingDeque} is thread safe,
  * does not permit null elements, and may (or may not) be
  * capacity-constrained.
  *
+ * BlockingDeque的实现可以直接当做一个先进先出的阻塞队列使用。
  * <p>A {@code BlockingDeque} implementation may be used directly as a FIFO
  * {@code BlockingQueue}. The methods inherited from the
  * {@code BlockingQueue} interface are precisely equivalent to
@@ -209,6 +220,7 @@ public interface BlockingDeque<E> extends BlockingQueue<E>, Deque<E> {
      */
 
     /**
+     * 方法说明参照BlockingQueue
      * Inserts the specified element at the front of this deque if it is
      * possible to do so immediately without violating capacity restrictions,
      * throwing an {@code IllegalStateException} if no space is currently
