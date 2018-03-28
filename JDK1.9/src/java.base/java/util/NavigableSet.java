@@ -36,6 +36,15 @@
 package java.util;
 
 /**
+ * 扩展的 SortedSet，具有为给定搜索目标报告最接近匹配项的导航方法。
+ * 方法 lower、floor、ceiling 和 higher 分别返回小于、小于等于、大于等于、大于给定元素的元素，
+ * 如果不存在这样的元素，则返回 null。可以按升序或降序访问和遍历 NavigableSet。descendingSet
+ * 方法返回 set 的一个视图，该视图表示的所有关系方法和方向方法都是逆向的。升序操作和视图的性能很
+ * 可能比降序操作和视图的性能要好。此外，此接口还定义了 pollFirst 和 pollLast 方法，它们返回并
+ * 移除最小和最大的元素（如果存在），否则返回 null。subSet、headSet 和 tailSet 方法与名称相似
+ * 的 SortedSet 方法的不同之处在于：可以接受用于描述是否包括（或不包括）下边界和上边界的附加参数。
+ * 任何 NavigableSet 的 Submap 必须实现 NavigableSet 接口。
+ *
  * A {@link SortedSet} extended with navigation methods reporting
  * closest matches for given search targets. Methods {@link #lower},
  * {@link #floor}, {@link #ceiling}, and {@link #higher} return elements
