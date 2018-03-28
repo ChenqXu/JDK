@@ -26,9 +26,12 @@
 package java.util;
 
 /**
+ * 该类是Set接口的一个框架性实现，目的是为了减小直接实现Set接口所带来的开销。
  * This class provides a skeletal implementation of the {@code Set}
  * interface to minimize the effort required to implement this
  * interface. <p>
+ *
+ * 除了一些独有的特性外（如Set不允许插入重复元素），继承该类等同于继承AbstractCollection
  *
  * The process of implementing a set by extending this class is identical
  * to that of implementing a Collection by extending AbstractCollection,
@@ -36,6 +39,8 @@ package java.util;
  * class must obey the additional constraints imposed by the {@code Set}
  * interface (for instance, the add method must not permit addition of
  * multiple instances of an object to a set).<p>
+ *
+ * 注意，该类没有重写任何AbstractCollection的方法，它仅仅添加了equals和hashCode的实现。
  *
  * Note that this class does not override any of the implementations from
  * the {@code AbstractCollection} class.  It merely adds implementations
@@ -55,6 +60,10 @@ package java.util;
  * @since 1.2
  */
 
+/**
+ * Set是怎么实现不允许添加重复元素的？答案就在这个类中。
+ * @param <E>
+ */
 public abstract class AbstractSet<E> extends AbstractCollection<E> implements Set<E> {
     /**
      * Sole constructor.  (For invocation by subclass constructors, typically
@@ -66,6 +75,10 @@ public abstract class AbstractSet<E> extends AbstractCollection<E> implements Se
     // Comparison and hashing
 
     /**
+     * 重写了equals方法，用来判断传入的对象是否和本集合“等同”。
+     * 当传入的对象o也是一个set，从且两个集合的大小相等，一个集合中的所有元素也存在于
+     * 另一个集合中（注意，没有要求顺序也相同，因为Set是不保证顺序的）。
+     *
      * Compares the specified object with this set for equality.  Returns
      * {@code true} if the given object is also a set, the two sets have
      * the same size, and every member of the given set is contained in
@@ -73,6 +86,7 @@ public abstract class AbstractSet<E> extends AbstractCollection<E> implements Se
      * properly across different implementations of the {@code Set}
      * interface.<p>
      *
+     * 调用了ContainsAll方法来判断元素都存在于对方集合中。
      * This implementation first checks if the specified object is this
      * set; if so it returns {@code true}.  Then, it checks if the
      * specified object is a set whose size is identical to the size of
@@ -101,6 +115,13 @@ public abstract class AbstractSet<E> extends AbstractCollection<E> implements Se
     }
 
     /**
+     * 集合的hashCode即使所有元素HashCode的和
+     * 这和AbstractList的hashCode不同，因为set无序，所以不用考虑顺序。
+     * 而AbsctractList的所有实现都是有序的，它的它的hashCode方法将元素的位置也考虑了进去，
+     * 具体为：
+     * for (E e : this)
+     * hashCode = 31*hashCode + (e==null ? 0 : e.hashCode());
+     *
      * Returns the hash code value for this set.  The hash code of a set is
      * defined to be the sum of the hash codes of the elements in the set,
      * where the hash code of a {@code null} element is defined to be zero.
@@ -129,12 +150,15 @@ public abstract class AbstractSet<E> extends AbstractCollection<E> implements Se
     }
 
     /**
+     *
      * Removes from this set all of its elements that are contained in the
      * specified collection (optional operation).  If the specified
      * collection is also a set, this operation effectively modifies this
      * set so that its value is the <i>asymmetric set difference</i> of
      * the two sets.
-     *
+     * 哪个集合较小，就使用哪个集合的迭代器进行遍历。
+     * 如果本Set较小，那么使用本集合的迭代器进行遍历，并使用iterator.remove方法进行删除
+     * 如果传入的集合较小，那么使用传入集合的迭代器对其进行遍历，调用本集合的remove方法进行删除。
      * <p>This implementation determines which is the smaller of this set
      * and the specified collection, by invoking the {@code size}
      * method on each.  If this set has fewer elements, then the
