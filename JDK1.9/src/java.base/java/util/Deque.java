@@ -36,6 +36,10 @@
 package java.util;
 
 /**
+ * 支持两端进行删除和插入的线性集合。
+ * Deque是“double ended queue”的缩写。
+ * 绝大多数的Deque实现对元素的数量没有固定的限制。
+ * 但此接口同时支持容量受限和不限的双端队列。
  * A linear collection that supports element insertion and removal at
  * both ends.  The name <i>deque</i> is short for "double ended queue"
  * and is usually pronounced "deck".  Most {@code Deque}
@@ -43,6 +47,7 @@ package java.util;
  * they may contain, but this interface supports capacity-restricted
  * deques as well as those with no fixed size limit.
  *
+ * 同Queue一样，Deque的所有的操作都有两种形式:失败了抛异常或者返回一个标志。
  * <p>This interface defines methods to access the elements at both
  * ends of the deque.  Methods are provided to insert, remove, and
  * examine the element.  Each of these methods exists in two forms:
@@ -131,6 +136,7 @@ package java.util;
  *  </tr>
  * </table>
  *
+ * Deque也可以用来实现栈。
  * <p>Deques can also be used as LIFO (Last-In-First-Out) stacks.  This
  * interface should be used in preference to the legacy {@link Stack} class.
  * When a deque is used as a stack, elements are pushed and popped from the
@@ -165,6 +171,7 @@ package java.util;
  * elements, {@link #removeFirstOccurrence removeFirstOccurrence} and
  * {@link #removeLastOccurrence removeLastOccurrence}.
  *
+ * 不同于List接口，该接口不支持通过下标访问元素（基于链表实现？）。
  * <p>Unlike the {@link List} interface, this interface does not
  * provide support for indexed access to elements.
  *
@@ -192,6 +199,7 @@ package java.util;
  */
 public interface Deque<E> extends Queue<E> {
     /**
+     * 见类说明的表格
      * Inserts the specified element at the front of this deque if it is
      * possible to do so immediately without violating capacity restrictions,
      * throwing an {@code IllegalStateException} if no space is currently
@@ -210,7 +218,7 @@ public interface Deque<E> extends Queue<E> {
      */
     void addFirst(E e);
 
-    /**
+    /**见类说明的表格
      * Inserts the specified element at the end of this deque if it is
      * possible to do so immediately without violating capacity restrictions,
      * throwing an {@code IllegalStateException} if no space is currently
@@ -231,7 +239,7 @@ public interface Deque<E> extends Queue<E> {
      */
     void addLast(E e);
 
-    /**
+    /**见类说明的表格
      * Inserts the specified element at the front of this deque unless it would
      * violate capacity restrictions.  When using a capacity-restricted deque,
      * this method is generally preferable to the {@link #addFirst} method,
@@ -250,6 +258,7 @@ public interface Deque<E> extends Queue<E> {
     boolean offerFirst(E e);
 
     /**
+     * 见类说明的表格
      * Inserts the specified element at the end of this deque unless it would
      * violate capacity restrictions.  When using a capacity-restricted deque,
      * this method is generally preferable to the {@link #addLast} method,
@@ -268,6 +277,7 @@ public interface Deque<E> extends Queue<E> {
     boolean offerLast(E e);
 
     /**
+     * 见类说明的表格
      * Retrieves and removes the first element of this deque.  This method
      * differs from {@link #pollFirst pollFirst} only in that it throws an
      * exception if this deque is empty.
@@ -278,6 +288,7 @@ public interface Deque<E> extends Queue<E> {
     E removeFirst();
 
     /**
+     * 见类说明的表格
      * Retrieves and removes the last element of this deque.  This method
      * differs from {@link #pollLast pollLast} only in that it throws an
      * exception if this deque is empty.
@@ -288,6 +299,7 @@ public interface Deque<E> extends Queue<E> {
     E removeLast();
 
     /**
+     * 见类说明的表格
      * Retrieves and removes the first element of this deque,
      * or returns {@code null} if this deque is empty.
      *
@@ -296,6 +308,7 @@ public interface Deque<E> extends Queue<E> {
     E pollFirst();
 
     /**
+     * 见类说明的表格
      * Retrieves and removes the last element of this deque,
      * or returns {@code null} if this deque is empty.
      *
@@ -304,6 +317,7 @@ public interface Deque<E> extends Queue<E> {
     E pollLast();
 
     /**
+     * 见类说明
      * Retrieves, but does not remove, the first element of this deque.
      *
      * This method differs from {@link #peekFirst peekFirst} only in that it
@@ -315,6 +329,7 @@ public interface Deque<E> extends Queue<E> {
     E getFirst();
 
     /**
+     * 见类说明
      * Retrieves, but does not remove, the last element of this deque.
      * This method differs from {@link #peekLast peekLast} only in that it
      * throws an exception if this deque is empty.
@@ -325,6 +340,7 @@ public interface Deque<E> extends Queue<E> {
     E getLast();
 
     /**
+     * 见类说明
      * Retrieves, but does not remove, the first element of this deque,
      * or returns {@code null} if this deque is empty.
      *
@@ -333,6 +349,7 @@ public interface Deque<E> extends Queue<E> {
     E peekFirst();
 
     /**
+     * 见类说明
      * Retrieves, but does not remove, the last element of this deque,
      * or returns {@code null} if this deque is empty.
      *
@@ -341,6 +358,7 @@ public interface Deque<E> extends Queue<E> {
     E peekLast();
 
     /**
+     * 从该双端队列中移除第一个匹配（Objects.equals(o, e)）传入对象的元素。
      * Removes the first occurrence of the specified element from this deque.
      * If the deque does not contain the element, it is unchanged.
      * More formally, removes the first element {@code e} such that
@@ -360,6 +378,8 @@ public interface Deque<E> extends Queue<E> {
     boolean removeFirstOccurrence(Object o);
 
     /**
+     * 从该双端队列中移除最后一个匹配（Objects.equals(o, e)）传入对象的元素。
+     * 从尾部开始遍历。
      * Removes the last occurrence of the specified element from this deque.
      * If the deque does not contain the element, it is unchanged.
      * More formally, removes the last element {@code e} such that
@@ -381,6 +401,7 @@ public interface Deque<E> extends Queue<E> {
     // *** Queue methods ***
 
     /**
+     * 在队列尾部插入元素e。如果空间不足则抛出异常。该方法等同于addLast
      * Inserts the specified element into the queue represented by this deque
      * (in other words, at the tail of this deque) if it is possible to do so
      * immediately without violating capacity restrictions, returning
@@ -405,6 +426,7 @@ public interface Deque<E> extends Queue<E> {
     boolean add(E e);
 
     /**
+     * 类似于queue的offer操作。
      * Inserts the specified element into the queue represented by this deque
      * (in other words, at the tail of this deque) if it is possible to do so
      * immediately without violating capacity restrictions, returning
@@ -506,6 +528,7 @@ public interface Deque<E> extends Queue<E> {
     // *** Stack methods ***
 
     /**
+     * 栈的方法
      * Pushes an element onto the stack represented by this deque (in other
      * words, at the head of this deque) if it is possible to do so
      * immediately without violating capacity restrictions, throwing an
