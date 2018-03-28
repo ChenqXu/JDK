@@ -36,6 +36,11 @@
 package java.util.concurrent;
 
 /**
+ * 参考说明博文：http://ifeve.com/java-transfer-queue/
+ * TransferQueue继承自BlockingQueue，并扩展了一些新方法。TransferQueue比BlockingQueue
+ * 在功能上更进一步：生产者调用Transfer方法向队列添加一个元素时，它会一直阻塞到该元素被消费者使用
+ * 为止。
+ *
  * A {@link BlockingQueue} in which producers may wait for consumers
  * to receive elements.  A {@code TransferQueue} may be useful for
  * example in message passing applications in which producers
@@ -43,6 +48,8 @@ package java.util.concurrent;
  * elements by consumers invoking {@code take} or {@code poll}, while
  * at other times enqueue elements (via method {@code put}) without
  * waiting for receipt.
+ *
+ *
  * {@linkplain #tryTransfer(Object) Non-blocking} and
  * {@linkplain #tryTransfer(Object,long,TimeUnit) time-out} versions of
  * {@code tryTransfer} are also available.
@@ -67,6 +74,10 @@ package java.util.concurrent;
  */
 public interface TransferQueue<E> extends BlockingQueue<E> {
     /**
+     * 非阻塞。
+     * 尝试立即将元素e转交给消费者，如果当前存在正在等待的消费者，那么该方法成功，返回true。
+     * 否则，返回false，元素不会被添加到TransferQueue中。
+     *
      * Transfers the element to a waiting consumer immediately, if possible.
      *
      * <p>More precisely, transfers the specified element immediately
@@ -86,6 +97,9 @@ public interface TransferQueue<E> extends BlockingQueue<E> {
     boolean tryTransfer(E e);
 
     /**
+     * 无限期阻塞。
+     * 将元素e加入到TransferQueue中并无限期等待，直到该元素被消费者接收。
+     *
      * Transfers the element to a consumer, waiting if necessary to do so.
      *
      * <p>More precisely, transfers the specified element immediately
@@ -105,6 +119,9 @@ public interface TransferQueue<E> extends BlockingQueue<E> {
     void transfer(E e) throws InterruptedException;
 
     /**
+     * 有限时间阻塞。
+     * 尝试在指定的时间段里将元素e转交给消费者。如果在指定时间里，该元素被消费者接收，
+     * 那么立即返回true。否则，返回false，元素留在队列中。
      * Transfers the element to a consumer if it is possible to do so
      * before the timeout elapses.
      *
@@ -135,6 +152,7 @@ public interface TransferQueue<E> extends BlockingQueue<E> {
         throws InterruptedException;
 
     /**
+     * 检测是否有消费者在等待，返回的结果代表检测瞬间的状态。
      * Returns {@code true} if there is at least one consumer waiting
      * to receive an element via {@link #take} or
      * timed {@link #poll(long,TimeUnit) poll}.
@@ -145,6 +163,8 @@ public interface TransferQueue<E> extends BlockingQueue<E> {
     boolean hasWaitingConsumer();
 
     /**
+     * 返回正在等待的消费者数量的估计值。这个值可能并不准确，可以用于检测，但是
+     * 不能用于同步控制。
      * Returns an estimate of the number of consumers waiting to
      * receive elements via {@link #take} or timed
      * {@link #poll(long,TimeUnit) poll}.  The return value is an
