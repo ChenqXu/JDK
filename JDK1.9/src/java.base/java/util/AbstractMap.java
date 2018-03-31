@@ -27,8 +27,10 @@ package java.util;
 import java.util.Map.Entry;
 
 /**
+ * 该类提供了一个Map接口的框架性实现。该Map实现允许存入null值
  * This class provides a skeletal implementation of the {@code Map}
  * interface, to minimize the effort required to implement this interface.
+ *
  *
  * <p>To implement an unmodifiable map, the programmer needs only to extend this
  * class and provide an implementation for the {@code entrySet} method, which
@@ -37,12 +39,14 @@ import java.util.Map.Entry;
  * not support the {@code add} or {@code remove} methods, and its iterator
  * should not support the {@code remove} method.
  *
+ *
  * <p>To implement a modifiable map, the programmer must additionally override
  * this class's {@code put} method (which otherwise throws an
  * {@code UnsupportedOperationException}), and the iterator returned by
  * {@code entrySet().iterator()} must additionally implement its
  * {@code remove} method.
  *
+ * 同map接口一样，继承该类需要至少实现两个构造函数，一个无参，一个以map为参数、
  * <p>The programmer should generally provide a void (no argument) and map
  * constructor, as per the recommendation in the {@code Map} interface
  * specification.
@@ -67,6 +71,7 @@ import java.util.Map.Entry;
 
 public abstract class AbstractMap<K,V> implements Map<K,V> {
     /**
+     * 无参构造器，主要用于给子类调用
      * Sole constructor.  (For invocation by subclass constructors, typically
      * implicit.)
      */
@@ -97,7 +102,8 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
 
     /**
      * {@inheritDoc}
-     *
+     * 通过entrySet()的迭代器对所有的Entry进行遍历。如果传入的value为null，则查找Entry中
+     * 是否有value为null的映射。如果存在，则返回true，否则，返回false。
      * @implSpec
      * This implementation iterates over {@code entrySet()} searching
      * for an entry with the specified value.  If such an entry is found,
@@ -128,7 +134,7 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
 
     /**
      * {@inheritDoc}
-     *
+     * 同containsValue(Object value)，通过entrySet()的迭代器对map进行遍历。
      * @implSpec
      * This implementation iterates over {@code entrySet()} searching
      * for an entry with the specified key.  If such an entry is found,
@@ -161,6 +167,12 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
     /**
      * {@inheritDoc}
      *
+     * 通过entrySet().iterator()对map进行遍历，如果key等于null，则找出ey为
+     * null的映射，并返回它的value。如果key不等于null，则找到匹配的映射，并返回value。
+     * 如果找不到匹配的key，则返回null。
+     * 该方法花费线性时间，很多实现会重写该方法。
+     * 由于该实现允许null值的插入，因此不可以仅仅通过返回值来判断key是否存在。这在Map接口中
+     * 已经说过，可以解渴containsKey方法进行判断。
      * @implSpec
      * This implementation iterates over {@code entrySet()} searching
      * for an entry with the specified key.  If such an entry is found,
@@ -213,6 +225,10 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
      * {@inheritDoc}
      *
      * @implSpec
+     * 遍历整个EntrySet()来寻找匹配的key。
+     * 如果找不到，则直接返回null。
+     * 如果找到了，则删除该记录，并返回key对应的value
+     * 该方法花费线性时间，很多实现会重写该方法。
      * This implementation iterates over {@code entrySet()} searching for an
      * entry with the specified key.  If such an entry is found, its value is
      * obtained with its {@code getValue} operation, the entry is removed
@@ -260,6 +276,8 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
     // Bulk Operations
 
     /**
+     * 批量插入。
+     * 对m的entrySet进行循环，并调用put(e,getKey(),e.getValue())方法进行插入或更新
      * {@inheritDoc}
      *
      * @implSpec
@@ -282,6 +300,7 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
     }
 
     /**
+     * 调用entrySet.clear()方法进行清空操作
      * {@inheritDoc}
      *
      * @implSpec
@@ -301,9 +320,12 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
     // Views
 
     /**
+     * 这些属性的创建使用了延迟加载的方式。当这些属性第一次被请求时，他们才会初始化为相应的视图
+     * 这些视图是状态无关的，因此没有必要创建多个。
      * Each of these fields are initialized to contain an instance of the
      * appropriate view the first time this view is requested.  The views are
      * stateless, so there's no reason to create more than one of each.
+     *
      *
      * <p>Since there is no synchronization performed while accessing these fields,
      * it is expected that java.util.Map view classes using these fields have
@@ -328,7 +350,11 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
     transient Collection<V> values;
 
     /**
+     * keySet实际上返回的也是EntrySet
      * {@inheritDoc}
+     *该类返回的是AbstractSet，该set的Iterator是对entrySet.iterator()的封装。
+     * 该set的其他方法如size、isEmpty、contains()等方法也是调用的本类的相应方法。
+     * 这就是为什么返回的Set是一个视图，对它的操作都会映射到map中。
      *
      * @implSpec
      * This implementation returns a set that subclasses {@link AbstractSet}.
@@ -346,9 +372,12 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
     public Set<K> keySet() {
         Set<K> ks = keySet;
         if (ks == null) {
-            ks = new AbstractSet<K>() {
+            ks = new AbstractSet<K>() { //返回一个AbstractMap类型的set
                 public Iterator<K> iterator() {
                     return new Iterator<K>() {
+                        //AbstractMap迭代器是对entrySet().iterator()的包装
+                        //也就是说，当我们调用set的迭代器的remove等方法时，实际上还是
+                        //调用的背后map的entrySet的迭代器。
                         private Iterator<Entry<K,V>> i = entrySet().iterator();
 
                         public boolean hasNext() {
@@ -364,7 +393,7 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
                         }
                     };
                 }
-
+                //均是通过调用map的相应方法来实现功能的
                 public int size() {
                     return AbstractMap.this.size();
                 }
@@ -387,6 +416,7 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
     }
 
     /**
+     * 该方法同keySet方法
      * {@inheritDoc}
      *
      * @implSpec
@@ -451,6 +481,9 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
     // Comparison and hashing
 
     /**
+     * 判断传入的map是否和本map“相等”
+     * 具体判断过程见代码注释。
+     *
      * Compares the specified object with this map for equality.  Returns
      * {@code true} if the given object is also a map and the two maps
      * represent the same mappings.  More formally, two maps {@code m1} and
@@ -473,24 +506,24 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
      * @return {@code true} if the specified object is equal to this map
      */
     public boolean equals(Object o) {
-        if (o == this)
+        if (o == this) //引用判断
             return true;
 
-        if (!(o instanceof Map))
+        if (!(o instanceof Map)) //类型判断
             return false;
         Map<?,?> m = (Map<?,?>) o;
-        if (m.size() != size())
+        if (m.size() != size())   //大小判断
             return false;
 
         try {
-            for (Entry<K, V> e : entrySet()) {
+            for (Entry<K, V> e : entrySet()) { //对所有entry进行循环遍历
                 K key = e.getKey();
                 V value = e.getValue();
                 if (value == null) {
-                    if (!(m.get(key) == null && m.containsKey(key)))
+                    if (!(m.get(key) == null && m.containsKey(key))) //对键判断
                         return false;
                 } else {
-                    if (!value.equals(m.get(key)))
+                    if (!value.equals(m.get(key)))  //对值判断
                         return false;
                 }
             }
@@ -504,6 +537,8 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
     }
 
     /**
+     * 返回map的hashCode。将所有entry的hashCode()相加就得到了map的hashCode(),
+     * 注意，并没有考虑顺序因子。而在SortedMap中则会考虑顺序因子。
      * Returns the hash code value for this map.  The hash code of a map is
      * defined to be the sum of the hash codes of each entry in the map's
      * {@code entrySet()} view.  This ensures that {@code m1.equals(m2)}
@@ -529,6 +564,9 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
     }
 
     /**
+     * 将map以字符串的形式打印出来。具体实现为：
+     * 使用entrySet.iterator()进行遍历，使用StringBuilder进行字符串拼接。
+     *
      * Returns a string representation of this map.  The string representation
      * consists of a list of key-value mappings in the order returned by the
      * map's {@code entrySet} view's iterator, enclosed in braces
@@ -561,6 +599,8 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
     }
 
     /**
+     * 返回一个该map的浅拷贝。具体实现：
+     * 调用Object.clone()方法
      * Returns a shallow copy of this {@code AbstractMap} instance: the keys
      * and values themselves are not cloned.
      *
@@ -574,6 +614,7 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
     }
 
     /**
+     * 为SimpleEntry和SimpleImmutableEntry准备的方法，用于判断是否相等。
      * Utility method for SimpleEntry and SimpleImmutableEntry.
      * Test for equality, checking for nulls.
      *
@@ -592,6 +633,7 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
 
 
     /**
+     * 只包含一个key和value的Entry，实现了Entry<K,V>接口。可序列化
      * An Entry maintaining a key and a value.  The value may be
      * changed using the {@code setValue} method.  This class
      * facilitates the process of building custom map
@@ -692,6 +734,7 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
         }
 
         /**
+         * Entry的hashCode等于key的hashCode异或value的hashCode。
          * Returns the hash code value for this map entry.  The hash code
          * of a map entry {@code e} is defined to be: <pre>
          *   (e.getKey()==null   ? 0 : e.getKey().hashCode()) ^
@@ -724,6 +767,11 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
     }
 
     /**
+     * 一个包含不可变的key和value的Entry。这个类不支持setValue操作。
+     *
+     * 由于内容不可变，所以这个类适合线程安全的场景。
+     *
+     * 除了不支持setValue操作，该类和SimpleEntry一样。
      * An Entry maintaining an immutable key and value.  This class
      * does not support method {@code setValue}.  This class may be
      * convenient in methods that return thread-safe snapshots of
