@@ -26,6 +26,12 @@
 package java.util;
 
 /**
+ * Map接口的一个子接口，定义了key有序的Map。
+ * key如果实现Comparable接口，那么可以使用自然顺序进行排序。否则，在创建该map是提供外部
+ * comparator。
+ * 对该map返回的视图（entrySet, keySet and values 方法）进行迭代遍历时就是根据key的顺序进行。
+ * 该类还额外提供了几种方法来利用key有序这个特性
+ *
  * A {@link Map} that further provides a <em>total ordering</em> on its keys.
  * The map is ordered according to the {@linkplain Comparable natural
  * ordering} of its keys, or by a {@link Comparator} typically
@@ -35,6 +41,8 @@ package java.util;
  * Several additional operations are provided to take advantage of the
  * ordering.  (This interface is the map analogue of {@link SortedSet}.)
  *
+ * 所有的key都必须是可以进行比较的，要么通过k1.compareTo(k2)，要么通过comparator.compare(k1, k2)
+ * 进行比较。
  * <p>All keys inserted into a sorted map must implement the {@code Comparable}
  * interface (or be accepted by the specified comparator).  Furthermore, all
  * such keys must be <em>mutually comparable</em>: {@code k1.compareTo(k2)} (or
@@ -44,6 +52,8 @@ package java.util;
  * offending method or constructor invocation to throw a
  * {@code ClassCastException}.
  *
+ * consistent with equals：强烈建议，但并不强制要求：equals和compareTo保持一致
+ *  x.compareTo(y)==0, 当且仅当 x.equals(y) ;
  * <p>Note that the ordering maintained by a sorted map (whether or not an
  * explicit comparator is provided) must be <em>consistent with equals</em> if
  * the sorted map is to correctly implement the {@code Map} interface.  (See
@@ -57,6 +67,11 @@ package java.util;
  * ordering is inconsistent with equals; it just fails to obey the general
  * contract of the {@code Map} interface.
  *
+ * 所有通用的sorted map需要提供4个构造器，分别是：
+ * 1、 无参数构造器，给子类调用
+ * 2、只含有一个Comparator的构造器
+ * 3、只含有一个Map类型的参数，根据Map的key的自然顺序排序
+ * 4、只含有一个SortedMap类型参数的构造器。
  * <p>All general-purpose sorted map implementation classes should provide four
  * "standard" constructors. It is not possible to enforce this recommendation
  * though as required constructors cannot be specified by interfaces. The
@@ -74,6 +89,9 @@ package java.util;
  *   ordering as the input sorted map.</li>
  * </ol>
  *
+ * 该接口提供了几个根据key的范围返回submaps的方法。这些范围都是半闭半开的。
+ * 可以通过m.subMap(low, high+"\0")来获得全闭范围。
+ * 或者通过m.subMap(low+"\0", high)来获得全开范围。
  * <p><strong>Note</strong>: several methods return submaps with restricted key
  * ranges. Such ranges are <em>half-open</em>, that is, they include their low
  * endpoint but not their high endpoint (where applicable).  If you need a
@@ -123,6 +141,8 @@ public interface SortedMap<K,V> extends Map<K,V> {
     Comparator<? super K> comparator();
 
     /**
+     * 返回一个从fromKey到toKey的前闭后开的子map视图。对视图的所有操作都会映射到
+     * 别后的map中去，反之亦然。
      * Returns a view of the portion of this map whose keys range from
      * {@code fromKey}, inclusive, to {@code toKey}, exclusive.  (If
      * {@code fromKey} and {@code toKey} are equal, the returned map
@@ -154,6 +174,8 @@ public interface SortedMap<K,V> extends Map<K,V> {
     SortedMap<K,V> subMap(K fromKey, K toKey);
 
     /**
+     * 返回一个从map头部到toKey的前闭后开的子map视图。对视图的所有操作都会映射到
+     * 别后的map中去，反之亦然。
      * Returns a view of the portion of this map whose keys are
      * strictly less than {@code toKey}.  The returned map is backed
      * by this map, so changes in the returned map are reflected in
@@ -181,6 +203,8 @@ public interface SortedMap<K,V> extends Map<K,V> {
     SortedMap<K,V> headMap(K toKey);
 
     /**
+     * 返回一个从fromKey到map尾部的前闭后闭的子map视图。对视图的所有操作都会映射到
+     * 别后的map中去，反之亦然。
      * Returns a view of the portion of this map whose keys are
      * greater than or equal to {@code fromKey}.  The returned map is
      * backed by this map, so changes in the returned map are
@@ -224,6 +248,7 @@ public interface SortedMap<K,V> extends Map<K,V> {
     K lastKey();
 
     /**
+     * 返回一个升序的keySet视图
      * Returns a {@link Set} view of the keys contained in this map.
      * The set's iterator returns the keys in ascending order.
      * The set is backed by the map, so changes to the map are
@@ -243,6 +268,7 @@ public interface SortedMap<K,V> extends Map<K,V> {
     Set<K> keySet();
 
     /**
+     * 返回一个包含所有values的视图
      * Returns a {@link Collection} view of the values contained in this map.
      * The collection's iterator returns the values in ascending order
      * of the corresponding keys.
@@ -263,6 +289,7 @@ public interface SortedMap<K,V> extends Map<K,V> {
     Collection<V> values();
 
     /**
+     * 返回该map的entrySet
      * Returns a {@link Set} view of the mappings contained in this map.
      * The set's iterator returns the entries in ascending key order.
      * The set is backed by the map, so changes to the map are
