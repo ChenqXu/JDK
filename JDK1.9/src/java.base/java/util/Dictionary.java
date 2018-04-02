@@ -26,6 +26,12 @@
 package java.util;
 
 /**
+ * 解释一下上面对Dictionary类的注释，Dictionary类是一个抽象的类，是Hashtable的父类，
+ * 是一个key->value的映射表，任意key和value是Object，不可以是null。
+ * 给一个Dictionary和key，它的value就能找到。equals方法用来判断两个key是否相同。
+ * 特别注意，这个类已经被废弃了，不建议继续继承这个类，建议去实现Map接口。
+ * 这个类之所以仍存在的原因是为了兼容之前使用这个类的系统。
+ *
  * The {@code Dictionary} class is the abstract parent of any
  * class, such as {@code Hashtable}, which maps keys to values.
  * Every key and every value is an object. In any one {@code Dictionary}
