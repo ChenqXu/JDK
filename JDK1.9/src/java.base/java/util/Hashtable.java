@@ -613,6 +613,7 @@ public class Hashtable<K,V>
     public synchronized Object clone() {
         Hashtable<?,?> t = cloneHashtable();
         t.table = new Entry<?,?>[table.length];
+        //对于链表的克隆，只克隆了当前节点，引用类型仅仅复制了引用
         for (int i = table.length ; i-- > 0 ; ) {
             t.table[i] = (table[i] != null)
                 ? (Entry<?,?>) table[i].clone() : null;//对hash表中的元素也进行了克隆

@@ -35,7 +35,10 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-/** 基于Hash表的Map接口实现
+/**
+ * 基于Hash表的Map接口实现。该类实现了map所有的optional操作，并且允许null的键和值。
+ * HashMap和HashTable大致上相同，但是此类不是线程安全的，而且该类允许null值。
+ * 该类不能保证元素的顺序（由于hash是无需的），并且元素的书序可能会一直改变（由于rehash）。
  * Hash table based implementation of the {@code Map} interface.  This
  * implementation provides all of the optional map operations, and permits
  * {@code null} values and the {@code null} key.  (The {@code HashMap}
@@ -44,6 +47,9 @@ import java.util.function.Function;
  * the order of the map; in particular, it does not guarantee that the order
  * will remain constant over time.不能保证元素顺序在一段时间内不变
  *
+ * 该实现对常规操作，如get、put提供了常数时间的性能（hash的特性）。
+ * 对该类返回视图的遍历所花费的时间与（哈希表的容量+实际元素多少）成比例。
+ * 因此，如果遍历性能很重要，那么不要把初始容量设置得过高或者装填因子设置得过低。
  * <p>This implementation provides constant-time performance for the basic
  * operations ({@code get} and {@code put}), assuming the hash function
  * disperses the elements properly among the buckets.  Iteration over
@@ -51,9 +57,12 @@ import java.util.function.Function;
  * {@code HashMap} instance (the number of buckets) plus its size (the number
  * of key-value mappings).  Thus, it's very important not to set the initial
  * capacity too high (or the load factor too low) if iteration performance is
- * important.迭代器性能与HashMap容量和实际大小成正比，因此，不要将初始容量设置得太大，或者将
- * 装填因子设置得太小。
+ * important.
  *
+ * 通HashTable一样，初始容量（initial capacity）和装填因子（load factor）对HashMap的
+ * 性能影响很大。
+ * HashMap：默认大小是16，装填因子是0.75
+ * HashTable: 默认大小是11，装填因子是0.75
  * <p>An instance of {@code HashMap} has two parameters that affect its
  * performance: <i>initial capacity</i> and <i>load factor</i>.  The
  * <i>capacity</i> is the number of buckets in the hash table, and the initial
@@ -66,6 +75,8 @@ import java.util.function.Function;
  * structures are rebuilt) so that the hash table has approximately twice the
  * number of buckets.
  *
+ * 通常，默认的装填因此是0.75.这个值教好地平衡了空间和时间消耗。该值过高，会导致hash冲突
+ * 频繁发生，查找一个元素的时间不断增大。该因素过小，会导致浪费过多的空间。
  * <p>As a general rule, the default load factor (.75) offers a good
  * tradeoff between time and space costs.  Higher values decrease the
  * space overhead but increase the lookup cost (reflected in most of
@@ -77,15 +88,23 @@ import java.util.function.Function;
  * maximum number of entries divided by the load factor, no rehash
  * operations will ever occur.
  *
+ * 初始容量的大小，平衡着空间消耗和再次hash的需要。如果初始容量比最大元素数量除以装填因子
+ * 还要打，那么将不会有再哈希发生。如果实现知道要插入大量的entry，那么将初始容量设置得足够大更好。这样可以避免频繁自动扩容
+ * 和再次hash的消耗。
  * <p>If many mappings are to be stored in a {@code HashMap}
  * instance, creating it with a sufficiently large capacity will allow
  * the mappings to be stored more efficiently than letting it perform
+ *
+ * 注意，多个key使用相同的hashCode会导致哈希表的性能下降
  * automatic rehashing as needed to grow the table.  Note that using
  * many keys with the same {@code hashCode()} is a sure way to slow
+ * 当key实现了Comparable接口时，为了减少碰撞，这个类会使用key的比较顺序来断开联系。
  * down performance of any hash table. To ameliorate（改良） impact（碰撞）, when keys
  * are {@link Comparable}, this class may use comparison order among
  * keys to help break ties.
  *
+ * 该类不是线程安全的，如果要在多线程并发修改的情境下使用HashMap，要么使用外部对象进行同步，
+ * 要么使用Collections.synchronizedMap()进行包装。
  * <p><strong>Note that this implementation is not synchronized.</strong>
  * If multiple threads access a hash map concurrently, and at least one of
  * the threads modifies the map structurally, it <i>must</i> be
@@ -101,6 +120,7 @@ import java.util.function.Function;
  * unsynchronized access to the map:<pre>
  *   Map m = Collections.synchronizedMap(new HashMap(...));</pre>
  *
+ * 该类返回视图的迭代器是快速失败机制的，这有助于提前发现并发修改，并将错误的影响减到最低。
  * <p>The iterators returned by all of this class's "collection view methods"
  * are <i>fail-fast</i>: if the map is structurally modified at any time after
  * the iterator is created, in any way except through the iterator's own
@@ -144,6 +164,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     /*
      * Implementation notes.
      *
+     * 当发生成hash冲突时，通常使用链表来解决冲突，当链表超过指定值，则会改为红黑树。
      * This map usually acts as a binned (bucketed) hash table, but
      * when bins get too large, they are transformed into bins of
      * TreeNodes, each structured similarly to those in
@@ -173,6 +194,8 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * programming practices that are already so slow that this makes
      * little difference.)
      *
+     * 由于树节点是链表节点2倍大小，因此，只要当链表达到一定程度（TREEIFY_THRESHOLD）时，
+     * 才会把链表转化为红黑树。当红黑树节点变得很少时，它们又会被转化为普通的链表。
      * Because TreeNodes are about twice the size of regular nodes, we
      * use them only when bins contain enough nodes to warrant use
      * (see TREEIFY_THRESHOLD). And when they become too small (due to
@@ -210,6 +233,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * normally the current table, but may be a new or old one when
      * resizing or converting.
      *
+     * 当链表被转化为红黑树、被拆分，或者从红黑树转化回来，我们会保持元素的相对顺序不变。
      * When bin lists are treeified, split, or untreeified, we keep
      * them in the same relative access/traversal order (i.e., field
      * Node.next) to better preserve locality, and to slightly
@@ -232,6 +256,9 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      */
 
     /**
+     * 默认的初始容量——16，必须是2的整数此方。
+     * hashtable中默认容量是11，并且没有要求初始容量是2的整数此方法
+     * 为什么？因为它们采用的哈希函数不同吗？
      * The default initial capacity - MUST be a power of two.
      */
     static final int DEFAULT_INITIAL_CAPACITY = 1 << 4; // aka 16
@@ -240,6 +267,8 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * The maximum capacity, used if a higher value is implicitly（隐式） specified
      * by either of the constructors with arguments.
      * MUST be a power of two <= 1<<30.
+     * 为什么是1<<30，因为size是一个32位的int型数字，最高位是符号位，因此int最大能表示的数
+     * 就是2^32，即1<<30
      */
     static final int MAXIMUM_CAPACITY = 1 << 30;
 
@@ -266,6 +295,8 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     static final int UNTREEIFY_THRESHOLD = 6; //树转换回链表的阈值
 
     /**
+     * 只有当哈希桶的个数超过64，才允许使用红黑树䣂解决冲突。否则，进行扩容来解决
+     * 冲突。
      * The smallest table capacity for which bins may be treeified.
      * (Otherwise the table is resized if too many nodes in a bin.)
      * Should be at least 4 * TREEIFY_THRESHOLD to avoid conflicts
@@ -298,6 +329,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         public final V getValue()      { return value; }
         public final String toString() { return key + "=" + value; }
 
+        //节点的hash值等于key和value的哈希值异或
         public final int hashCode() {
             return Objects.hashCode(key) ^ Objects.hashCode(value);
         }
@@ -324,9 +356,18 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     /* ---------------- Static utilities -------------- */
 
     /**
+     * 计算key的哈希码，将key本身的哈希码进行异或操作。高位不变，低位与高位异或。
+     * 计算哈希桶坐标时，是这样的：(n-1)&key，key为该方法返回的哈希值，n是哈希表的长度。
+     * 为什么要这么做？
+     * 在通常情况下，哈希表的长度都不太长，那么上面的方法就会导致高位不能与表长进行运算。
+     * 因此，在哈希表不太大时参与运算的只有低位，高位并没有起应有的
+     * 作用。因此，将高16位与低16位进行异或，使得高16位也参与了运算，减小了哈希冲突
+     * 的概率。
+     * 详细说明见我的CSDN博客：https://blog.csdn.net/zhoucheng05_13/article/details/79815803
      * Computes key.hashCode() and spreads (XORs) higher bits of hash
      * to lower.  Because the table uses power-of-two masking, sets of
      * hashes that vary only in bits above the current mask will
+     * 由于该表使用幂级别掩码，所以在当前掩码之上的位上发生变化的散列总是会发生冲突。
      * always collide. (Among known examples are sets of Float keys
      * holding consecutive whole numbers in small tables.)  So we
      * apply a transform that spreads the impact of higher bits
@@ -341,10 +382,11 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      */
     static final int hash(Object key) {
         int h;
-        return (key == null) ? 0 : (h = key.hashCode()) ^ (h >>> 16);//对hash码的高16位进行异或，高位不变，低位变0
+        return (key == null) ? 0 : (h = key.hashCode()) ^ (h >>> 16);
     }
 
     /**
+     * 如果x实现了Comparable接口，那么返回x的class，否则返回null。
      * Returns x's Class if it is of the form "class C implements
      * Comparable<C>", else null.
      */
@@ -368,6 +410,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
+     * 如果x匹配kc，那么返回k.compareTo(x)，否则返回0.
      * Returns k.compareTo(x) if x matches kc (k's screened comparable
      * class), else 0.
      */
@@ -397,6 +440,9 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     /* ---------------- Fields -------------- */
 
     /**
+     * 一个Node类型的数组，作为HashMap的底层容器，Hash表。
+     * 它在第一次使用时被初始化（延迟加载），并且它的大小适中为2的幂。
+     * 在某些操作中，我们还可以容忍长度为0的操作，以允许目前不需要的引导机制。
      * The table, initialized on first use, and resized as
      * necessary. When allocated, length is always a power of two.
      * (We also tolerate length zero in some operations to allow
@@ -405,6 +451,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     transient Node<K,V>[] table;
 
     /**
+     * 保存缓存的entrySet
      * Holds cached entrySet(). Note that AbstractMap fields are used
      * for keySet() and values().
      */
@@ -416,7 +463,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     transient int size;
 
     /**
-     * 该HashMap被结构化修改的次数
+     * 该HashMap被结构化修改的次数，这个属性别用于支持视图迭代器的快速失败机制
      * The number of times this HashMap has been structurally modified
      * Structural modifications are those that change the number of mappings in
      * the HashMap or otherwise modify its internal structure (e.g.,
@@ -426,6 +473,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     transient int modCount; //同步计数器
 
     /**
+     * 等于capacity * load factor，进行resize操作的阈值
      * The next size value at which to resize (capacity * load factor).
      *
      * @serial
@@ -446,6 +494,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     /* ---------------- Public operations -------------- */
 
     /**
+     * 指定容量和装填因子的构造方法，初始容量会被修改为2的幂
      * Constructs an empty {@code HashMap} with the specified initial
      * capacity and load factor.
      *
@@ -468,6 +517,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
+     * 使用默认的负载因子0.75
      * Constructs an empty {@code HashMap} with the specified initial
      * capacity and the default load factor (0.75).
      *
@@ -479,6 +529,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
+     * 使用默认大小16和默认装填因子0.75
      * Constructs an empty {@code HashMap} with the default initial capacity
      * (16) and the default load factor (0.75).
      */
@@ -501,6 +552,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
+     * 通过map.entrySet()遍历传入的map并逐一插入
      * Implements Map.putAll and Map constructor
      *
      * @param m the map
@@ -554,6 +606,8 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * key.equals(k))}, then this method returns {@code v}; otherwise
      * it returns {@code null}.  (There can be at most one such mapping.)
      *
+     * 当这个方法返回null的时候，并不一定说明key不存在，因为还有可能value就是null。
+     * 可以通过containsKey()来区分。
      * <p>A return value of {@code null} does not <i>necessarily</i>
      * indicate that the map contains no mapping for the key; it's also
      * possible that the map explicitly maps the key to {@code null}.
@@ -578,13 +632,13 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         Node<K,V>[] tab; Node<K,V> first, e; int n; K k;
         if ((tab = table) != null && (n = tab.length) > 0 &&
             (first = tab[(n - 1) & hash]) != null) {
-            if (first.hash == hash && // always check first node
+            if (first.hash == hash && // always check first node 总是检查第一个节点
                 ((k = first.key) == key || (key != null && key.equals(k))))
                 return first;
-            if ((e = first.next) != null) {
-                if (first instanceof TreeNode)
+            if ((e = first.next) != null) {  //检查后面的节点
+                if (first instanceof TreeNode)  //后面是树结构，调用树的查找方法
                     return ((TreeNode<K,V>)first).getTreeNode(hash, key);
-                do {
+                do {          //后面是链表结构，依次遍历
                     if (e.hash == hash &&
                         ((k = e.key) == key || (key != null && key.equals(k))))
                         return e;
@@ -607,6 +661,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
+     * 如果key不存在，则将指定的key和value插入哈希表中并返回null，如果存在，则更新value的值并返回旧值。
      * Associates the specified value with the specified key in this map.
      * If the map previously contained a mapping for the key, the old
      * value is replaced.
@@ -623,6 +678,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
+     * 如果onlyIfAbsent为true，则只执行插入，不执行更新
      * Implements Map.put and related methods
      *
      * @param hash hash for key
@@ -664,18 +720,19 @@ public class HashMap<K,V> extends AbstractMap<K,V>
                 V oldValue = e.value;
                 if (!onlyIfAbsent || oldValue == null)
                     e.value = value;
-                afterNodeAccess(e);
+                afterNodeAccess(e);  //为LinkedHashMap准备的回调函数
                 return oldValue;
             }
         }
         ++modCount;
         if (++size > threshold)
             resize();
-        afterNodeInsertion(evict);
+        afterNodeInsertion(evict);//为LinkedHashMap准备的回调函数
         return null;
     }
 
     /**
+     * 初始化或者将表空间扩大2倍。并重新进行hash散列
      * Initializes or doubles table size.  If null, allocates in
      * accord with initial capacity target held in field threshold.
      * Otherwise, because we are using power-of-two expansion, the
@@ -694,9 +751,9 @@ public class HashMap<K,V> extends AbstractMap<K,V>
                 threshold = Integer.MAX_VALUE;
                 return oldTab;
             }
-            else if ((newCap = oldCap << 1) < MAXIMUM_CAPACITY &&  //将老容量扩大2倍
+            else if ((newCap = oldCap << 1) < MAXIMUM_CAPACITY &&  //将容量扩大2倍
                      oldCap >= DEFAULT_INITIAL_CAPACITY)
-                newThr = oldThr << 1; // double threshold
+                newThr = oldThr << 1; // double threshold 将阈值扩大两倍
         }
         else if (oldThr > 0) // initial capacity was placed in threshold
             newCap = oldThr;
@@ -759,6 +816,8 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
+     * 如果哈希表的容量大于MIN_TREEIFY_CAPACITY，也就是68，那么将哈希值对应的下标后的链
+     * 转变为红黑树。否则，对哈希表进行扩容，并重新哈希。
      * Replaces all linked nodes in bin at index for given hash unless
      * table is too small, in which case resizes instead.
      */
@@ -796,6 +855,9 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
+     * 如果key存在，则将key对应的映射移除
+     * 具体实现：
+     * 调用removeNode()方法
      * Removes the mapping for the specified key from this map if present.
      *
      * @param  key key whose mapping is to be removed from the map
@@ -811,6 +873,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
+     * 删除节点的多功能方法
      * Implements Map.remove and related methods
      *
      * @param hash hash for key
@@ -824,12 +887,12 @@ public class HashMap<K,V> extends AbstractMap<K,V>
                                boolean matchValue, boolean movable) {
         Node<K,V>[] tab; Node<K,V> p; int n, index;
         if ((tab = table) != null && (n = tab.length) > 0 &&
-            (p = tab[index = (n - 1) & hash]) != null) {
+            (p = tab[index = (n - 1) & hash]) != null) { //找到哈希坐标
             Node<K,V> node = null, e; K k; V v;
-            if (p.hash == hash &&
+            if (p.hash == hash &&  //验证坐标
                 ((k = p.key) == key || (key != null && key.equals(k))))
                 node = p;
-            else if ((e = p.next) != null) {
+            else if ((e = p.next) != null) { //查找链表
                 if (p instanceof TreeNode)
                     node = ((TreeNode<K,V>)p).getTreeNode(hash, key);
                 else {
@@ -862,6 +925,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
+     * 一重循环，一次对每一个哈希桶置null，时间复杂度o(N)
      * Removes all of the mappings from this map.
      * The map will be empty after this call returns.
      */
@@ -876,6 +940,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
+     * 只能暴力循环，一一判断，时间复杂度O(N)
      * Returns {@code true} if this map maps one or more keys to the
      * specified value.
      *
@@ -898,6 +963,9 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
+     * 返回key的视图
+     * 实现方式：判断keySet是否为null，不为null，则直接返回
+     * 为null，则创建一个KeySet实例。
      * Returns a {@link Set} view of the keys contained in this map.
      * The set is backed by the map, so changes to the map are
      * reflected in the set, and vice-versa.  If the map is modified
@@ -921,6 +989,9 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         return ks;
     }
 
+    /**
+     * 都是通过调用外部方法来实现功能的。
+     */
     final class KeySet extends AbstractSet<K> {
         public final int size()                 { return size; }
         public final void clear()               { HashMap.this.clear(); }
@@ -932,6 +1003,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         public final Spliterator<K> spliterator() {
             return new KeySpliterator<>(HashMap.this, 0, -1, 0, 0);
         }
+        //对每一个元素执行相同的操作，通过重写Consumer函数式接口方法
         public final void forEach(Consumer<? super K> action) {
             Node<K,V>[] tab;
             if (action == null)
@@ -1422,7 +1494,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         s.defaultWriteObject();
         s.writeInt(buckets);
         s.writeInt(size);
-        internalWriteEntries(s);
+        internalWriteEntries(s); //将Entry的key和value都写入到输出流中
     }
 
     /**
@@ -1484,6 +1556,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
             Node<K,V>[] t = table;
             current = next = null;
             index = 0;
+            //找到第一个不等于null的桶
             if (t != null && size > 0) { // advance to first entry
                 do {} while (index < t.length && (next = t[index++]) == null);
             }
@@ -1518,16 +1591,17 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         }
     }
 
+    //调用父类HashIterator的nextNode()方法
     final class KeyIterator extends HashIterator
         implements Iterator<K> {
         public final K next() { return nextNode().key; }
     }
-
+    //调用父类HashIterator的nextNode()方法
     final class ValueIterator extends HashIterator
         implements Iterator<V> {
         public final V next() { return nextNode().value; }
     }
-
+    //调用父类HashIterator的nextNode()方法
     final class EntryIterator extends HashIterator
         implements Iterator<Map.Entry<K,V>> {
         public final Map.Entry<K,V> next() { return nextNode(); }
@@ -1792,6 +1866,8 @@ public class HashMap<K,V> extends AbstractMap<K,V>
 
 
     /*
+     * 下面这些方法是为LinkedHashMap设计的几乎所有的内部方法都是包访问权限，
+     * 所以能够被LinkedHashMap使用
      * The following package-protected methods are designed to be
      * overridden by LinkedHashMap, but not by any other subclass.
      * Nearly all other internal methods are also package-protected
