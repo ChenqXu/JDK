@@ -31,20 +31,27 @@ import java.util.function.BiFunction;
 import java.io.IOException;
 
 /**
+ * 通过链表的方式使得插入变得有序的Map接口实现。
+ * 该实现和hashMap不同的地方在于，该实现使用了双向链表连接了所有的entry。这个链表根据插入顺序
+ * 进行排序，迭代器也是使用的这个顺序。
  * <p>Hash table and linked list implementation of the {@code Map} interface,
  * with predictable iteration order.  This implementation differs from
  * {@code HashMap} in that it maintains a doubly-linked list running through
  * all of its entries.  This linked list defines the iteration ordering,
  * which is normally the order in which keys were inserted into the map
  * (<i>insertion-order</i>).  Note that insertion order is not affected
+ * 如果在put(k,v)调用之前，key已经存在了，那么本次调用将不会改变该节点的顺序。
  * if a key is <i>re-inserted</i> into the map.  (A key {@code k} is
  * reinserted into a map {@code m} if {@code m.put(k, v)} is invoked when
  * {@code m.containsKey(k)} would return {@code true} immediately prior to
  * the invocation.)
  *
+ * 这个实现是为了解决HashMap和HashTable无序问题，而又不增加像TreeMap那样的成本。
  * <p>This implementation spares its clients from the unspecified, generally
  * chaotic ordering provided by {@link HashMap} (and {@link Hashtable}),
  * without incurring the increased cost associated with {@link TreeMap}.  It
+ *
+ * 可以通过以下方式来生成一个与原始版本有相同顺序的Map副本，而不考虑原始Map的实现。
  * can be used to produce a copy of a map that has the same order as the
  * original, regardless of the original map's implementation:
  * <pre>
@@ -53,11 +60,17 @@ import java.io.IOException;
  *         ...
  *     }
  * </pre>
+ *
+ * 如果模块在输入时获取Map，并对其进行复制，然后返回由复制顺序决定的结果时，这个技术特别有用。
+ * （客户通常会喜欢以相同的顺序返回的东西）
  * This technique is particularly useful if a module takes a map on input,
  * copies it, and later returns results whose order is determined by that of
  * the copy.  (Clients generally appreciate having things returned in the same
  * order they were presented.)
  *
+ *
+ * LinkedHashMap的一个特殊的构造器LinkedHashMap(int,float,boolean)被用来创建一个
+ * 从最近最少到最近被访问的访问顺序排序的LinkedHashMap。这样的map非常适合用于实现LRU缓存。
  * <p>A special {@link #LinkedHashMap(int,float,boolean) constructor} is
  * provided to create a linked hash map whose order of iteration is the order
  * in which its entries were last accessed, from least-recently accessed to
@@ -70,25 +83,38 @@ import java.io.IOException;
  * of the entry if the value is replaced.  The {@code putAll} method generates one
  * entry access for each mapping in the specified map, in the order that
  * key-value mappings are provided by the specified map's entry set iterator.
+ * 特别地，在集合视图上的操作，不会影响背后map的迭代顺序
  * <i>No other methods generate entry accesses.</i>  In particular, operations
  * on collection-views do <i>not</i> affect the order of iteration of the
  * backing map.
+ *
+ * removeEldestEntry(Map.Entry)方法可以被重写，以便在将新的映射添加到Map时自动删除过时的映射。
  *
  * <p>The {@link #removeEldestEntry(Map.Entry)} method may be overridden to
  * impose a policy for removing stale mappings automatically when new mappings
  * are added to the map.
  *
+ * 该类可以允许null值。和HashMap一样，在元素均匀分布于哈希桶中时，它保证了常用操作
+ * （add、remove、contains）的常数时间界。
  * <p>This class provides all of the optional {@code Map} operations, and
  * permits null elements.  Like {@code HashMap}, it provides constant-time
  * performance for the basic operations ({@code add}, {@code contains} and
  * {@code remove}), assuming the hash function disperses elements
+ * 由于添加了链表，一次LinkedHashMap的性能会略低于HashMap。
+ *
  * properly among the buckets.  Performance is likely to be just slightly
  * below that of {@code HashMap}, due to the added expense of maintaining the
  * linked list, with one exception: Iteration over the collection-views
  * of a {@code LinkedHashMap} requires time proportional to the <i>size</i>
+ * LinkedHashMap在视图上的迭代器需要与size成比例的时间，与容量无关。
+ * HashMap的迭代器依赖于哈希桶的容量，这将花费比LinkedHashMap更多的时间。
  * of the map, regardless of its capacity.  Iteration over a {@code HashMap}
  * is likely to be more expensive, requiring time proportional to its
  * <i>capacity</i>.
+ *
+ * 该类的initial capacity和load facotry参数的定义与HashMap中一样。不过，需要注意的是，
+ * 初始容量过高给LinkedHashMap带来的影响比HashMap要小得多。因为LinkedHashMap的遍历是通过
+ * 链表完成（HashMap是通过遍历所有哈希桶，时间与容量成正比）。
  *
  * <p>A linked hash map has two parameters that affect its performance:
  * <i>initial capacity</i> and <i>load factor</i>.  They are defined precisely
@@ -96,7 +122,8 @@ import java.io.IOException;
  * excessively high value for initial capacity is less severe for this class
  * than for {@code HashMap}, as iteration times for this class are unaffected
  * by capacity.
- *
+ * 注意，该类不是同步的。要在多线程环境下并发访问该类，要么使用外部对象进行同步，要么使用
+ * Collections.synchronizedMap(new LinkedHashMap(...));对其进行包装。
  * <p><strong>Note that this implementation is not synchronized.</strong>
  * If multiple threads access a linked hash map concurrently, and at least
  * one of the threads modifies the map structurally, it <em>must</em> be
@@ -109,6 +136,8 @@ import java.io.IOException;
  * unsynchronized access to the map:<pre>
  *   Map m = Collections.synchronizedMap(new LinkedHashMap(...));</pre>
  *
+ * 注意，仅仅更新映射的value不算“structural modification”。但是！在LinkedHashMap中使用
+ * get方法获取数据是一种结构化修改，因为这个操作会将get访问的映射移到迭代器的第一位（LRU）。
  * A structural modification is any operation that adds or deletes one or more
  * mappings or, in the case of access-ordered linked hash maps, affects
  * iteration order.  In insertion-ordered linked hash maps, merely changing
@@ -117,6 +146,7 @@ import java.io.IOException;
  * merely querying the map with {@code get} is a structural modification.
  * </strong>)
  *
+ * 该类返回的集合视图的迭代器是快速失败的。
  * <p>The iterators returned by the {@code iterator} method of the collections
  * returned by all of this class's collection view methods are
  * <em>fail-fast</em>: if the map is structurally modified at any time after
@@ -166,11 +196,19 @@ public class LinkedHashMap<K,V>
 {
 
     /*
+     * 该类的早期版本在结构上与现在的版本有一些不同。因为父类HashMap现在使用树来表示
+     * 一些节点，所以LinkedHashMap.Entry现在被当做一个中间节点，它调用了HashMap的
+     * Entry，并额外添加了before和after两个属性。（装饰者模式？）
+     *
      * Implementation note.  A previous version of this class was
      * internally structured a little differently. Because superclass
      * HashMap now uses trees for some of its nodes, class
      * LinkedHashMap.Entry is now treated as intermediary node class
      * that can also be converted to tree form. The name of this
+     * LinkedHashMap.Entry这个类名在当前的上下文中有几个令人困惑的方面，但不能改变。
+     * 否则，即使它不会被导出到包外，一些现有源代码在调用remove eldeldenstentry时
+     * 依赖的符号解析角大小写规则（该规则抑制了由于不明确调用而导致的编译错误）将会遭到破坏。
+     * 所以，我们保留这个名称来保存未经修改的编译能力。
      * class, LinkedHashMap.Entry, is confusing in several ways in its
      * current context, but cannot be changed.  Otherwise, even though
      * it is not exported outside this package, some existing source
@@ -179,14 +217,18 @@ public class LinkedHashMap<K,V>
      * errors due to ambiguous usages. So, we keep the name to
      * preserve unmodified compilability.
      *
+     * 节点类的更改还需要使用两个字段（head、tail），而不是指向头节点的指针，以便在列表
+     * 之前保持双链接。该类还在访问、插入和删除时使用了不同风格的回调方法。
      * The changes in node classes also require using two fields
      * (head, tail) rather than a pointer to a header node to maintain
      * the doubly-linked before/after list. This class also
      * previously used a different style of callback methods upon
      * access, insertion, and removal.
+     *
      */
 
     /**
+     * 该Entry对HashMap.Node进行了包装，并添加了两个属性，before和after
      * HashMap.Node subclass for normal LinkedHashMap entries.
      */
     static class Entry<K,V> extends HashMap.Node<K,V> {
@@ -199,6 +241,7 @@ public class LinkedHashMap<K,V>
     private static final long serialVersionUID = 3801124242820219131L;
 
     /**
+     * 保留了头尾两个引用，HashMap没有
      * The head (eldest) of the doubly linked list.
      */
     transient LinkedHashMap.Entry<K,V> head;
@@ -209,6 +252,8 @@ public class LinkedHashMap<K,V>
     transient LinkedHashMap.Entry<K,V> tail;
 
     /**
+     * 这个属性定义了迭代器的遍历顺序，若为true，则使用访问顺序（LRU），若为false，则使用
+     * 插入顺序。该属性是final类型的常量，只能赋值一次。
      * The iteration ordering method for this linked hash map: {@code true}
      * for access-order, {@code false} for insertion-order.
      *
@@ -219,6 +264,7 @@ public class LinkedHashMap<K,V>
     // internal utilities
 
     // link at the end of list
+    // 将指定节点连接到链表尾部
     private void linkNodeLast(LinkedHashMap.Entry<K,V> p) {
         LinkedHashMap.Entry<K,V> last = tail;
         tail = p;
@@ -231,6 +277,7 @@ public class LinkedHashMap<K,V>
     }
 
     // apply src's links to dst
+    // 使用dst节点替换src节点
     private void transferLinks(LinkedHashMap.Entry<K,V> src,
                                LinkedHashMap.Entry<K,V> dst) {
         LinkedHashMap.Entry<K,V> b = dst.before = src.before;
@@ -247,18 +294,19 @@ public class LinkedHashMap<K,V>
 
     // overrides of HashMap hook methods
 
-    void reinitialize() {
+    void reinitialize() { //重新初始化，将属性都置为null或0.
         super.reinitialize();
         head = tail = null;
     }
 
+    //创建一个新的节点，将其插入到Node e前面，并将其连接到链表尾部，
     Node<K,V> newNode(int hash, K key, V value, Node<K,V> e) {
         LinkedHashMap.Entry<K,V> p =
             new LinkedHashMap.Entry<>(hash, key, value, e);
         linkNodeLast(p);
         return p;
     }
-
+    //用新创建的LinkedHashMap.Entry类型的t节点替换HashMap.Node类型的旧节点。
     Node<K,V> replacementNode(Node<K,V> p, Node<K,V> next) {
         LinkedHashMap.Entry<K,V> q = (LinkedHashMap.Entry<K,V>)p;
         LinkedHashMap.Entry<K,V> t =
@@ -266,20 +314,21 @@ public class LinkedHashMap<K,V>
         transferLinks(q, t);
         return t;
     }
-
+    //创建一个新的红黑树节点，并将其连接到双链尾部
     TreeNode<K,V> newTreeNode(int hash, K key, V value, Node<K,V> next) {
         TreeNode<K,V> p = new TreeNode<>(hash, key, value, next);
         linkNodeLast(p);
         return p;
     }
 
+    //将Node类型的节点p替换为TreeNode类型。
     TreeNode<K,V> replacementTreeNode(Node<K,V> p, Node<K,V> next) {
         LinkedHashMap.Entry<K,V> q = (LinkedHashMap.Entry<K,V>)p;
         TreeNode<K,V> t = new TreeNode<>(q.hash, q.key, q.value, next);
         transferLinks(q, t);
         return t;
     }
-
+    //将节点e从双链中移除
     void afterNodeRemoval(Node<K,V> e) { // unlink
         LinkedHashMap.Entry<K,V> p =
             (LinkedHashMap.Entry<K,V>)e, b = p.before, a = p.after;
@@ -294,6 +343,7 @@ public class LinkedHashMap<K,V>
             a.before = b;
     }
 
+    //可能会移除最老的节点
     void afterNodeInsertion(boolean evict) { // possibly remove eldest
         LinkedHashMap.Entry<K,V> first;
         if (evict && (first = head) != null && removeEldestEntry(first)) {
@@ -302,6 +352,7 @@ public class LinkedHashMap<K,V>
         }
     }
 
+    //当Node被访问后，将其移动到链表的最后
     void afterNodeAccess(Node<K,V> e) { // move node to last
         LinkedHashMap.Entry<K,V> last;
         if (accessOrder && (last = tail) != e) {
@@ -335,6 +386,7 @@ public class LinkedHashMap<K,V>
     }
 
     /**
+     * 根据传入的两个参数构造一个空的，按插入顺序排序的LinkedHashMap
      * Constructs an empty insertion-ordered {@code LinkedHashMap} instance
      * with the specified initial capacity and load factor.
      *
@@ -361,6 +413,7 @@ public class LinkedHashMap<K,V>
     }
 
     /**
+     * 使用默认的容量16和默认的装填因子0.75来创建一个按插入顺序排序的LinkedHashMap
      * Constructs an empty insertion-ordered {@code LinkedHashMap} instance
      * with the default initial capacity (16) and load factor (0.75).
      */
@@ -370,6 +423,8 @@ public class LinkedHashMap<K,V>
     }
 
     /**
+     * 构造一个基于m的LinkedHashMap。
+     * 对m进行循环，并依次插入。
      * Constructs an insertion-ordered {@code LinkedHashMap} instance with
      * the same mappings as the specified map.  The {@code LinkedHashMap}
      * instance is created with a default load factor (0.75) and an initial
@@ -404,6 +459,8 @@ public class LinkedHashMap<K,V>
 
 
     /**
+     * 遍历整个链表，直到找到匹配的Value，并返回ture。该方法是通过遍历链表，而不是
+     * 所有哈希桶，因此比HashMap要高效。
      * Returns {@code true} if this map maps one or more keys to the
      * specified value.
      *
@@ -421,6 +478,10 @@ public class LinkedHashMap<K,V>
     }
 
     /**
+     * 根据指定的key，返回value，如果不存在，则返回null。
+     * 如果accessOrder等于true，即该LinkedHashMap是根据访问顺序排序的，
+     * 那么调用 afterNodeAccess(e)方法将e移动到链表的尾部。
+     *
      * Returns the value to which the specified key is mapped,
      * or {@code null} if this map contains no mapping for the key.
      *
@@ -445,6 +506,8 @@ public class LinkedHashMap<K,V>
     }
 
     /**
+     * 来自Map接口的方法。如果map中包含该key，那么返回对应的value。
+     * 如果不存在该key，那么返回一个默认值。
      * {@inheritDoc}
      */
     public V getOrDefault(Object key, V defaultValue) {
@@ -457,6 +520,7 @@ public class LinkedHashMap<K,V>
    }
 
     /**
+     * 1、调用父类的clear清除哈希桶，在使用head = tail = null;清除链表
      * {@inheritDoc}
      */
     public void clear() {
@@ -465,13 +529,20 @@ public class LinkedHashMap<K,V>
     }
 
     /**
+     * 如果这个Map需要移除最老的entry，那么返回true。
      * Returns {@code true} if this map should remove its eldest entry.
+     * 这个方法是被put和putAll方法，在插入元素过后调用。
      * This method is invoked by {@code put} and {@code putAll} after
      * inserting a new entry into the map.  It provides the implementor
+     *
+     * 它为实现者提供了一个机会，可以在每次添加新条目时删除最老的条目。这在使用map做缓存
+     * 时非常有用：它允许map通过删除最旧的元素来减少内存消耗。
      * with the opportunity to remove the eldest entry each time a new one
      * is added.  This is useful if the map represents a cache: it allows
      * the map to reduce memory consumption by deleting stale entries.
      *
+     * 下面是一个简单的例子，当map增长到100时，每次插入新的元素就删除一个最老的元素，
+     * 使得容量始终保持在100.
      * <p>Sample use: this override will allow the map to grow up to 100
      * entries and then delete the eldest entry each time a new entry is
      * added, maintaining a steady state of 100 entries.
@@ -483,6 +554,9 @@ public class LinkedHashMap<K,V>
      *     }
      * </pre>
      *
+     * 这个方法没有直接修改map，而是通过返回值决定是否允许map修改自身。
+     * 在这个方法中直接修改map也是允许的，不过如果要这么做，那么必须返回false，
+     * 以防止map被重复修改。
      * <p>This method typically does not modify the map in any way,
      * instead allowing the map to modify itself as directed by its
      * return value.  It <i>is</i> permitted for this method to modify
@@ -491,8 +565,11 @@ public class LinkedHashMap<K,V>
      * further modification).  The effects of returning {@code true}
      * after modifying the map from within this method are unspecified.
      *
+     *
      * <p>This implementation merely returns {@code false} (so that this
      * map acts like a normal map - the eldest element is never removed).
+     * eldest：默认是最久插入的entry。如果map基于访问顺序排序（access-ordered），
+     * 那么就是最远被访问的元素。
      *
      * @param    eldest The least recently inserted entry in the map, or if
      *           this is an access-ordered map, the least recently accessed

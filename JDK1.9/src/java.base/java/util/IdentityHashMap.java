@@ -31,6 +31,8 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
 /**
+ * 该类是Map接口的一个哈希表实现，它使用引用相等（reference-equality）而不是通常情况下的
+ * 对象相等。更精确地说，在比较key时，只有在k1==k2时，才认为是equal的。
  * This class implements the {@code Map} interface with a hash table, using
  * reference-equality in place of object-equality when comparing keys (and
  * values).  In other words, in an {@code IdentityHashMap}, two keys
@@ -39,6 +41,7 @@ import java.util.function.Consumer;
  * {@code HashMap}) two keys {@code k1} and {@code k2} are considered equal
  * if and only if {@code (k1==null ? k2==null : k1.equals(k2))}.)
  *
+ * 这个类并不是常规目的的Map实现，它仅仅用于一些特殊的，需要引用相等的情况。
  * <p><b>This class is <i>not</i> a general-purpose {@code Map}
  * implementation!  While this class implements the {@code Map} interface, it
  * intentionally violates {@code Map's} general contract, which mandates the
@@ -46,15 +49,20 @@ import java.util.function.Consumer;
  * designed for use only in the rare cases wherein reference-equality
  * semantics are required.</b>
  *
+ * 该类的一个典型的应用是：拓扑保持对象图变换，例如序列化和深度拷贝。
  * <p>A typical use of this class is <i>topology-preserving object graph
  * transformations</i>, such as serialization or deep-copying.  To perform such
  * a transformation, a program must maintain a "node table" that keeps track
  * of all the object references that have already been processed.  The node
  * table must not equate distinct objects even if they happen to be equal.
+ * 该类的另一个典型应用是维护代理对象。
+ * 例如，调试工具可能希望为正在调试的程序中的每一个对象维护一个代理对象。
  * Another typical use of this class is to maintain <i>proxy objects</i>.  For
  * example, a debugging facility might wish to maintain a proxy object for
  * each object in the program being debugged.
  *
+ * 这个类允许null值，并且支持所有map的optional操作。这个类并不保证元素的顺序，尤其是，
+ * 这个类并不保证遍历顺序一直不变。
  * <p>This class provides all of the optional map operations, and permits
  * {@code null} values and the {@code null} key.  This class makes no
  * guarantees as to the order of the map; in particular, it does not guarantee
@@ -65,6 +73,7 @@ import java.util.function.Consumer;
  * identity hash function ({@link System#identityHashCode(Object)})
  * disperses elements properly among the buckets.
  *
+ * 该类有一个调优参数，它会影响性能，而不是语义。这个代表该map所希望持有的最大键值对映射数。
  * <p>This class has one tuning parameter (which affects performance but not
  * semantics): <i>expected maximum size</i>.  This parameter is the maximum
  * number of key-value mappings that the map is expected to hold.  Internally,
@@ -72,6 +81,7 @@ import java.util.function.Consumer;
  * comprising the hash table.  The precise relationship between the expected
  * maximum size and the number of buckets is unspecified.
  *
+ * 如果键值对数量查过了“expected maximum size”，那么哈希表将会进行扩容和重哈希。
  * <p>If the size of the map (the number of key-value mappings) sufficiently
  * exceeds the expected maximum size, the number of buckets is increased.
  * Increasing the number of buckets ("rehashing") may be fairly expensive, so
@@ -80,6 +90,9 @@ import java.util.function.Consumer;
  * time proportional to the number of buckets in the hash table, so it
  * pays not to set the expected maximum size too high if you are especially
  * concerned with iteration performance or memory usage.
+ *
+ * 该类并不是同步的，如果要在多线程并发修改的环境下使用，必须进行外部加锁，或者使用
+ * Collections.synchronizedMap(new IdentityHashMap(...))方法进行包装
  *
  * <p><strong>Note that this implementation is not synchronized.</strong>
  * If multiple threads access an identity hash map concurrently, and at
@@ -96,6 +109,7 @@ import java.util.function.Consumer;
  * unsynchronized access to the map:<pre>
  *   Map m = Collections.synchronizedMap(new IdentityHashMap(...));</pre>
  *
+ * 所有视图方法返回视图的迭代器都是“快速失败”机制的。
  * <p>The iterators returned by the {@code iterator} method of the
  * collections returned by all of this class's "collection view
  * methods" are <i>fail-fast</i>: if the map is structurally modified
@@ -114,6 +128,9 @@ import java.util.function.Consumer;
  * exception for its correctness: <i>fail-fast iterators should be used only
  * to detect bugs.</i>
  *
+ * 注意：该类使用线性探测法来解决哈希冲突。
+ * 该实现中的数组交替持有键和值。（对于大型表来说，这比使用单独的数组有更好的位置。
+ * 对于许多JRE的实现和操作混合，这个类将比HashMap（它使用链接而不是线性探测）的性能更好。
  * <p>Implementation note: This is a simple <i>linear-probe</i> hash table,
  * as described for example in texts by Sedgewick and Knuth.  The array
  * alternates holding keys and values.  (This has better locality for large

@@ -688,7 +688,7 @@ public interface Map<K, V> {
      * 如果map中包含该key，那么返回对应的value。
      * 如果不存在该key，那么返回一个默认值。
      * Returns the value to which the specified key is mapped, or
-     * {@code defaultValue} if this map contains no mapping for the key.
+     * {@code defaultValue} if this map contains no mapping ofr the key.
      *
      * @implSpec
      * 默认的实现对该方法的同步或原子性质没有保证，如果任何实现要提供原子操作的保证，那么
