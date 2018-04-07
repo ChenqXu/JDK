@@ -40,6 +40,8 @@ import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 
 /**
+ * ArrayDeque是一个基于可变数组实现的Deque实现。ArrayDeque没有容量限制，它们在需要的
+ * 时候会自动扩容。
  * Resizable-array implementation of the {@link Deque} interface.  Array
  * deques have no capacity restrictions; they grow as necessary to support
  * usage.  They are not thread-safe; in the absence of external

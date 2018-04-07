@@ -33,7 +33,7 @@ import java.util.function.Consumer;
  * interfaces.  Implements all optional list operations, and permits all
  * elements (including {@code null}).
  *
- *对于index的定位，必须由头部或者尾部开始遍历得到。
+ * 对于index的定位，必须由头部或者尾部开始遍历得到。
  * <p>All of the operations perform as could be expected for a doubly-linked
  * list.  Operations that index into the list will traverse the list from
  * the beginning or the end, whichever is closer to the specified index.

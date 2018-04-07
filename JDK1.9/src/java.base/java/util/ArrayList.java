@@ -60,7 +60,7 @@ import java.util.function.UnaryOperator;
  * specified beyond the fact that adding an element has constant amortized
  * time cost.
  *
- * 用户可以通过调用ensureCapacity方法来确保ArrayList拥有足够大的空间。并依次来避免频繁
+ * 用户可以通过调用ensureCapacity方法来确保ArrayList拥有足够大的空间。并以此来避免频繁
  * 的自动扩容所带来的时间开销。
  * <p>An application can increase the capacity of an {@code ArrayList} instance
  * before adding a large number of elements using the {@code ensureCapacity}
@@ -294,7 +294,7 @@ public class ArrayList<E> extends AbstractList<E>
     private int newCapacity(int minCapacity) {
         // overflow-conscious code
         int oldCapacity = elementData.length;
-        int newCapacity = oldCapacity + (oldCapacity >> 1);
+        int newCapacity = oldCapacity + (oldCapacity >> 1); //增大50%
         if (newCapacity - minCapacity <= 0) {
             if (elementData == DEFAULTCAPACITY_EMPTY_ELEMENTDATA)
                 return Math.max(DEFAULT_CAPACITY, minCapacity);

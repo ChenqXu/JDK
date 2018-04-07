@@ -26,10 +26,14 @@
 package java.util;
 
 /**
+ * 不允许重复元素的集合，最多允许一个null值。正如其名称所暗示的，这个接口模拟了数学集的抽象。
  * A collection that contains no duplicate elements.  More formally, sets
  * contain no pair of elements {@code e1} and {@code e2} such that
  * {@code e1.equals(e2)}, and at most one null element.  As implied by
  * its name, this interface models the mathematical <i>set</i> abstraction.
+ *
+ * Set对所有构造器和add、equals、hashCode方法上添加了额外的规定。关于构造函数的附加规定是，
+ * 所有构造函数都必须创建一个不包含重复元素的集合。
  *
  * <p>The {@code Set} interface places additional stipulations, beyond those
  * inherited from the {@code Collection} interface, on the contracts of all
@@ -63,6 +67,8 @@ package java.util;
  * Such exceptions are marked as "optional" in the specification for this
  * interface.
  *
+ * 不可变Set静态工厂方法——Set.Of()用于创建不可变的Set集合，这些集合有以下特点：
+ *
  * <h2><a id="immutable">Immutable Set Static Factory Methods</a></h2>
  * <p>The {@link Set#of(Object...) Set.of()} static factory methods
  * provide a convenient way to create immutable sets. The {@code Set}
@@ -72,13 +78,17 @@ package java.util;
  * <li>They are <em>structurally immutable</em>. Elements cannot be added or
  * removed. Calling any mutator method will always cause
  * {@code UnsupportedOperationException} to be thrown.
+ * 他们是结构不可更改的。不能添加、删除或者更新键值。进行这些操作将抛出UnsupportedOperationException
  * However, if the contained elements are themselves mutable, this may cause the
  * Set to behave inconsistently or its contents to appear to change.
  * <li>They disallow {@code null} elements. Attempts to create them with
  * {@code null} elements result in {@code NullPointerException}.
+ * 他们不允许出现null值，否则会抛出NullPointerException。
  * <li>They are serializable if all elements are serializable.
+ * 如果所有元素都可以被序列化，那么这个List也可以被序列化
  * <li>They reject duplicate elements at creation time. Duplicate elements
  * passed to a static factory method result in {@code IllegalArgumentException}.
+ * 它们拒绝重复元素，如果重复元素别传递给这些方法，那么会抛出IllegalArgumentException。
  * <li>The iteration order of set elements is unspecified and is subject to change.
  * <li>They are <a href="../lang/doc-files/ValueBased.html">value-based</a>.
  * Callers should make no assumptions about the identity of the returned instances.

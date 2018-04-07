@@ -26,7 +26,7 @@
 package java.util;
 
 /**
- * 该类提供了Collection的一个提纲性的实现，以减小直接实现Colleciotn接口的影响
+ * 该类提供了接口Collection的框架实现，用来降低实现该接口的复杂程度。
  * This class provides a skeletal implementation of the {@code Collection}
  * interface, to minimize the effort required to implement this interface. <p>
  *

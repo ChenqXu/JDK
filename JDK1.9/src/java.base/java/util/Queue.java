@@ -36,6 +36,9 @@
 package java.util;
 
 /**
+ * 一种用于在处理前保存元素的集合,即队列。除了继承自Collection的基本操作外，该接口还
+ * 提供了额外的插入、提取和检查操作。它的这些方法都存在两种形式：当操作失败时，一种抛出
+ * 异常，一种返回一个特殊的值（null或者false）。也正是由于第二种形式的存在，该接口不允许null值。
  * A collection designed for holding elements prior to processing.
  * Besides basic {@link java.util.Collection Collection} operations,
  * queues provide additional insertion, extraction, and inspection
@@ -133,7 +136,7 @@ package java.util;
  * used as a special return value by the {@code poll} method to
  * indicate that the queue contains no elements.
  *
- * 队列通常不实现字节的equals和hashCode方法，而是使用继承自Object的这些方法。
+ * 队列通常不实现自己的equals和hashCode方法，而是使用继承自Object的这些方法。
  * 因为对于相同元素但不同顺序的队列，基于队列值的equals和hashCode方法并不总是表现的很好。
  * <p>{@code Queue} implementations generally do not define
  * element-based versions of methods {@code equals} and

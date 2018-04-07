@@ -26,7 +26,7 @@
 package java.util;
 
 /**
- *SortedSet能保持元素整体有序。元素根据自身的原始顺序或指定的Comparator进行大小比较。
+ * SortedSet能保持元素整体有序。元素根据自身的原始顺序或指定的Comparator进行大小比较。
  * 迭代器遍历的顺序使升序的。该类为利用有序性额外提供几个方法。
  * A {@link Set} that further provides a <i>total ordering</i> on its elements.
  * The elements are ordered using their {@linkplain Comparable natural
@@ -36,8 +36,8 @@ package java.util;
  * to take advantage of the ordering.  (This interface is the set
  * analogue of {@link SortedMap}.)
  *
- * 所有被插入Set中的元素都必须实现Comparable接口，后者能过被指定的Comparator接收。
- *对任意的两个元素e1、e2，都需要能通过e1.compareTo(e2)或者comparator.compare(e1, e2)
+ * 所有被插入Set中的元素都必须实现Comparable接口，或者通过构造器传入一个Comparator。
+ * 对任意的两个元素e1、e2，都需要能通过e1.compareTo(e2)或者comparator.compare(e1, e2)
  * 进行比较。
  * <p>All elements inserted into a sorted set must implement the {@code Comparable}
  * interface (or be accepted by the specified comparator).  Furthermore, all

@@ -31,7 +31,7 @@ import java.util.function.Function;
 import java.io.Serializable;
 
 /**
- * 存储key到value的映射，并能包含重复的key，每一个key只能映射最多一个value
+ * 存储key到value的映射，不能包含重复的key，每一个key只能映射最多一个value
  * An object that maps keys to values.  A map cannot contain duplicate keys;
  * each key can map to at most one value.
  *
@@ -50,7 +50,7 @@ import java.io.Serializable;
  * specific guarantees as to their order; others, like the {@code HashMap}
  * class, do not.
  *
- * 尤其要注意，如果键所代表的对象是可变的，并且这个改变会影响equals方法，那么map的行为将是不确定的。
+ * 尤其要注意，如果对象的值以影响相等比较的方式更改，而对象是映射中的键，则不会匹配到映射的行为
  * <p>Note: great care must be exercised if mutable objects are used as map
  * keys.  The behavior of a map is not specified if the value of an object is
  * changed in a manner that affects {@code equals} comparisons while the

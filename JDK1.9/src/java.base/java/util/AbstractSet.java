@@ -26,7 +26,7 @@
 package java.util;
 
 /**
- * 该类是Set接口的一个框架性实现，目的是为了减小直接实现Set接口所带来的开销。
+ * 该类是Set接口的一个框架性实现，目的是为了减小实现Set接口的难度。
  * This class provides a skeletal implementation of the {@code Set}
  * interface to minimize the effort required to implement this
  * interface. <p>

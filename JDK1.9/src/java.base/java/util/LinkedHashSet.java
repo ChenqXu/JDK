@@ -26,6 +26,10 @@
 package java.util;
 
 /**
+ * 该类是Set接口的链表式哈希表实现，它提供了有序访问的能力。这个实现与HashSet不同的地方在于，
+ * 该类使用了双向链表来连接了所有的entries。它的迭代器的顺序使元素被插入的顺序。
+ * （类似于HashMap和LinkedHashMap？注释文档都跟LinkedHashMap一样。。。。）
+ *
  * <p>Hash table and linked list implementation of the {@code Set} interface,
  * with predictable iteration order.  This implementation differs from
  * {@code HashSet} in that it maintains a doubly-linked list running through

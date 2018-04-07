@@ -28,12 +28,16 @@ package java.util;
 import java.io.InvalidObjectException;
 
 /**
+ * 该类是Set接口的实现，它基于HashMap实例。由于使用了哈希表，因此它不保证元素的顺序，
+ * 同时也不保证顺序一致不变。
  * This class implements the {@code Set} interface, backed by a hash table
  * (actually a {@code HashMap} instance).  It makes no guarantees as to the
  * iteration order of the set; in particular, it does not guarantee that the
  * order will remain constant over time.  This class permits the {@code null}
  * element.
  *
+ * 和任何基于Hash表的实现一样，它提供基本操作的线性时间界。对该Set进行遍历的时间与容量
+ * （而不是size）成正比，因此，不应该包初始容量设置的过大。
  * <p>This class offers constant time performance for the basic operations
  * ({@code add}, {@code remove}, {@code contains} and {@code size}),
  * assuming the hash function disperses the elements properly among the
@@ -48,7 +52,8 @@ import java.io.InvalidObjectException;
  * the threads modifies the set, it <i>must</i> be synchronized externally.
  * This is typically accomplished by synchronizing on some object that
  * naturally encapsulates the set.
- *
+ *该类不是线程安全的。如果要在多线程环境下使用，必须进行外部加锁或者使用
+ * Collections.SynchronizedSet()方法进行包装。
  * If no such object exists, the set should be "wrapped" using the
  * {@link Collections#synchronizedSet Collections.synchronizedSet}
  * method.  This is best done at creation time, to prevent accidental

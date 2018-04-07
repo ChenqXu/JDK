@@ -449,7 +449,7 @@ public class Hashtable<K,V>
         Entry<?,?>[] oldMap = table;
 
         // overflow-conscious code
-        //1、扩容新容量等于旧容量乘2加1，即扩容100%
+        //1、扩容新容量等于旧容量乘2加1，为甚要加1？因为要使得容量为质数
         int newCapacity = (oldCapacity << 1) + 1;
         if (newCapacity - MAX_ARRAY_SIZE > 0) {
             if (oldCapacity == MAX_ARRAY_SIZE)

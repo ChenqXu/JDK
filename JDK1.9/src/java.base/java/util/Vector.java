@@ -30,7 +30,7 @@ import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 
 /**
- *  Vector实现了一个大小可变的数组，它的元素可以通过下标方法（实现了RandomAccess
+ *  Vector实现了一个大小可变的数组，它的元素可以通过下标访问（实现了RandomAccess
  *  接口）。
  *
  *  Vector是线程安全的。在不需要考虑线程安全的情况下，推荐实用ArrayList来替代该类。

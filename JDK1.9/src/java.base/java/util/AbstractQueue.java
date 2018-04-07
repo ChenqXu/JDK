@@ -36,6 +36,7 @@
 package java.util;
 
 /**
+ * 实现自Queue接口和AbstractCollection抽象类。该类是Queue接口的一个框架性实现，目的是为了减小实现Queue接口的难度。
  * This class provides skeletal implementations of some {@link Queue}
  * operations. The implementations in this class are appropriate when
  * the base implementation does <em>not</em> allow {@code null}

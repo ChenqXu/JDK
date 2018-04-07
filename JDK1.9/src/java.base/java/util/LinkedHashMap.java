@@ -100,7 +100,7 @@ import java.io.IOException;
  * permits null elements.  Like {@code HashMap}, it provides constant-time
  * performance for the basic operations ({@code add}, {@code contains} and
  * {@code remove}), assuming the hash function disperses elements
- * 由于添加了链表，一次LinkedHashMap的性能会略低于HashMap。
+ * 由于添加了链表，因此LinkedHashMap的性能会略低于HashMap。
  *
  * properly among the buckets.  Performance is likely to be just slightly
  * below that of {@code HashMap}, due to the added expense of maintaining the

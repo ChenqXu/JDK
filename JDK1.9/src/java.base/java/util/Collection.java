@@ -59,7 +59,7 @@ import java.util.stream.StreamSupport;
  * constructors) but all of the general-purpose {@code Collection}
  * implementations in the Java platform libraries comply.
  *
- *执行不支持的操作可能抛出UnsupportedOperationException。如对不可变集合执行addAll()方法
+ * 执行不支持的操作可能抛出UnsupportedOperationException。如对不可变集合执行addAll()方法
  * <p>The "destructive" methods contained in this interface, that is, the
  * methods that modify the collection on which they operate, are specified to
  * throw {@code UnsupportedOperationException} if this collection does not
@@ -95,7 +95,7 @@ import java.util.stream.StreamSupport;
  * a method that might perform invocations, and using an existing
  * iterator to examine the collection.
  *
- *集合框架的很多方法都是基于Object.equals()方法，如contains(obj)
+ * 集合框架接口的很多方法都是基于Object.equals()方法，如contains(obj)
  * <p>Many methods in Collections Framework interfaces are defined in
  * terms of(依据） the {@link Object#equals(Object) equals} method.  For example,
  * the specification for the {@link #contains(Object) contains(Object o)}
@@ -113,7 +113,7 @@ import java.util.stream.StreamSupport;
  * the specified behavior of underlying {@link Object} methods wherever the
  * implementor deems it appropriate.
  *
- *有些方法可能会因为持有自己的引用（self-referential）而导致递归遍历失败，如clone()、equals()、
+ * 有些方法可能会因为持有自己的引用（self-referential）而导致递归遍历失败，如clone()、equals()、
  * hashCode()、toString()
  * <p>Some collection operations which perform recursive traversal of the
  * collection may fail with an exception for self-referential instances where
@@ -606,7 +606,7 @@ public interface Collection<E> extends Iterable<E> {
     }
 
     /**
-     * 返回一个该集合的串行流
+     * 以这个集合作为源返回一个序列流。
      * Returns a sequential {@code Stream} with this collection as its source.
      *
      * <p>This method should be overridden when the {@link #spliterator()}
@@ -626,7 +626,7 @@ public interface Collection<E> extends Iterable<E> {
     }
 
     /**
-     * 返回一个并行流，如果可以得到的话
+     * 以这个集合作为源返回一个并行流。也允许这个方法返回一个串行流。
      * Returns a possibly parallel {@code Stream} with this collection as its
      * source.  It is allowable for this method to return a sequential stream.
      *

@@ -28,7 +28,7 @@ package java.util;
 import java.util.function.Consumer;
 
 /**
- * 该类是List接口的提纲性实现，来简化需要实现list接口的类的工作。该类的所有实现都是以
+ * 该类是List接口的框架性实现，用来减小实现list接口的难度。该类的所有实现都是以
  * “random access”的方式访问元素（简而言之就是可以通过下标访问元素，如数组）
  * 对于需要以链表方法是组织元素的集合，应该优先考虑继承AbstractSequentialList。
  * 注：AbstractSequentialList也是一个抽象类，且是该类的子类
