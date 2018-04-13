@@ -51,9 +51,11 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 /**
+ *ConcurrentLinkedDeque是一个基于链表节点，没有容量限制的同步Deque实现。
  * An unbounded concurrent {@linkplain Deque deque} based on linked nodes.
  * Concurrent insertion, removal, and access operations execute safely
  * across multiple threads.
+ * ConcurrentLinkedDeque适合于很多线程共享读取操作。
  * A {@code ConcurrentLinkedDeque} is an appropriate choice when
  * many threads will share access to a common collection.
  * Like most other concurrent collection implementations, this class
@@ -62,11 +64,16 @@ import java.util.function.Predicate;
  * <p>Iterators and spliterators are
  * <a href="package-summary.html#Weakly"><i>weakly consistent</i></a>.
  *
+ * 注意，不像大多是集合，该类的size方法不是常数时间的。由于这些deques的异步特性，确定
+ * 元素的当前数量需要对元素进行遍历，因此如果在遍历过程中修改了这些集合，那么可能会报告
+ * 不准确的结果。
+
  * <p>Beware that, unlike in most collections, the {@code size} method
  * is <em>NOT</em> a constant-time operation. Because of the
  * asynchronous nature of these deques, determining the current number
  * of elements requires a traversal of the elements, and so may report
  * inaccurate results if this collection is modified during traversal.
+ *
  *
  * <p>Bulk operations that add, remove, or examine multiple elements,
  * such as {@link #addAll}, {@link #removeIf} or {@link #forEach},
@@ -77,6 +84,8 @@ import java.util.function.Predicate;
  * <p>This class and its iterator implement all of the <em>optional</em>
  * methods of the {@link Deque} and {@link Iterator} interfaces.
  *
+ * 内存一致性影响：与其他并发集合一样，将一个对象放入ConcurrentLinkedDeque中的操作，
+ * 先行发生于另一个线程从ConcurrentLinkedDeque读取或删除那个对象的操作。
  * <p>Memory consistency effects: As with other concurrent collections,
  * actions in a thread prior to placing an object into a
  * {@code ConcurrentLinkedDeque}

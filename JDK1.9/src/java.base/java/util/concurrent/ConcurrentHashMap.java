@@ -71,6 +71,7 @@ import java.util.stream.Stream;
 import jdk.internal.misc.Unsafe;
 
 /**
+ * 一个支持全并发读和高并发更新的hash table
  * A hash table supporting full concurrency of retrievals and
  * high expected concurrency for updates. This class obeys the
  * same functional specification as {@link java.util.Hashtable}, and

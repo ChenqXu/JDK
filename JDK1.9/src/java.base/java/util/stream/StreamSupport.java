@@ -29,6 +29,7 @@ import java.util.Spliterator;
 import java.util.function.Supplier;
 
 /**
+ * 用于创建和操作流的底层实用方法。
  * Low-level utility methods for creating and manipulating streams.
  *
  * <p>This class is mostly for library writers presenting stream views

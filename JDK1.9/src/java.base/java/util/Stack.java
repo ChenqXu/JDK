@@ -36,6 +36,7 @@ package java.util;
  * <p>
  * When a stack is first created, it contains no items.
  *
+ * Deque接口及其实现提供了一个更加完善的栈实现，应该优先使用Deque而不是本类。
  * <p>A more complete and consistent set of LIFO stack operations is
  * provided by the {@link Deque} interface and its implementations, which
  * should be used in preference to this class.  For example:
