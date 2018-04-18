@@ -78,15 +78,21 @@ public class Object {
      * <p>
      * The general contract of {@code hashCode} is:
      * <ul>
+     * 在一次程序执行过程中，同一个对象，不管调用多少次HashCode，返回的值都应该相等。
+     * 但是一个程序这一次执行中的HashCcode不用与另一次执行的HashCode相同。
      * <li>Whenever it is invoked on the same object more than once during
      *     an execution of a Java application, the {@code hashCode} method
      *     must consistently return the same integer, provided no information
      *     used in {@code equals} comparisons on the object is modified.
      *     This integer need not remain consistent from one execution of an
      *     application to another execution of the same application.
+     * 如果两个对象通过equals(Object)判定是相等的，那么调用HashCode()方法也应该返回相同的序列。
+     * 即：equals()相等，那么一定有HashCode相等。
      * <li>If two objects are equal according to the {@code equals(Object)}
      *     method, then calling the {@code hashCode} method on each of
      *     the two objects must produce the same integer result.
+     * 如果equals()不相等，那么可以不要求hashCode一定相等。但是编程者应该明确，对
+     * unequal的对象产生不同的hashCode可能会提高哈希表的性能。
      * <li>It is <em>not</em> required that if two objects are unequal
      *     according to the {@link java.lang.Object#equals(java.lang.Object)}
      *     method, then calling the {@code hashCode} method on each of the
@@ -95,6 +101,7 @@ public class Object {
      *     for unequal objects may improve the performance of hash tables.
      * </ul>
      * <p>
+     *
      * As much as is reasonably practical, the hashCode method defined
      * by class {@code Object} does return distinct integers for
      * distinct objects. (The hashCode may or may not be implemented
